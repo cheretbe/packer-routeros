@@ -1,0 +1,11 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+  config.ssh.username = "vagrant"
+  #config.ssh.password = "vagrant"
+  config.ssh.keys_only = true
+  config.ssh.insert_key = false
+  config.vm.box_check_update = false
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+end

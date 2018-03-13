@@ -1,0 +1,56 @@
+{
+  "variables": {
+    "ros_ver": "6.39.3"
+  },
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "vm_name": "routeros",
+      "guest_os_type": "Other",
+      "disk_size": "256",
+      "vboxmanage": [
+        ["modifyvm", "{{.Name}}", "--memory", "128"],
+        ["modifyvm", "{{.Name}}", "--acpi", "on"],
+        ["modifyvm", "{{.Name}}", "--ioapic", "on"],
+        ["modifyvm", "{{.Name}}", "--hpet", "on"],
+        ["modifyvm", "{{.Name}}", "--rtcuseutc", "on"],
+        ["modifyvm", "{{.Name}}", "--pae", "on"],
+        ["modifyvm", "{{.Name}}", "--usb", "on"],
+        ["modifyvm", "{{.Name}}", "--usbehci", "off"]
+      ],
+      "iso_url": "https://download2.mikrotik.com/routeros/{{user `ros_ver`}}/mikrotik-{{user `ros_ver`}}.iso",
+      "iso_checksum_type": "none",
+      "http_directory": ".",
+      "boot_command": [
+        "ainy<wait10><enter>",
+        "<wait10><wait10><wait10><wait10>",
+        "admin<enter><wait>",
+        "<enter><wait>",
+        "<enter><wait5>",
+        "q<enter><wait5>",
+        "<enter><wait5>",
+        "/ip dhcp-client add disabled=no interface=ether1<enter>",
+        "<wait5>",
+        "/tool fetch url=\"http://{{ .HTTPIP }}:{{ .HTTPPort }}/provision.rsc\" keep-result=yes dst-path=\"provision.rsc\"<enter>",
+        "<wait5>",
+        "/import pr<tab><enter>",
+        "<wait5>"
+      ],
+      "guest_additions_mode": "disable",
+      "ssh_username": "admin",
+      "ssh_password": "",
+      "ssh_wait_timeout": "60m",
+      "shutdown_command": "execute \"/system shutdown\"",
+      "format": "ova"
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "vagrant",
+      "keep_input_artifact": false,
+      "compression_level": 9,
+      "output": "build/boxes/routeros.box",
+      "vagrantfile_template": "vagrantfile-mikrotik.template"
+    }
+  ]
+}
