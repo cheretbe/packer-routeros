@@ -33,10 +33,13 @@
         "<wait5>",
         "/tool fetch url=\"http://{{ .HTTPIP }}:{{ .HTTPPort }}/provision.rsc\" keep-result=yes dst-path=\"provision.rsc\"<enter>",
         "<wait5>",
+        "/tool fetch url=\"http://{{ .HTTPIP }}:{{ .HTTPPort }}/vagrant_insecure.key\" keep-result=yes dst-path=\"vagrant.key\"<enter>",
+        "<wait5>",
         "/import pr<tab><enter>",
         "<wait5>"
       ],
       "guest_additions_mode": "disable",
+      "virtualbox_version_file": "",
       "ssh_username": "admin",
       "ssh_password": "",
       "ssh_wait_timeout": "60m",
