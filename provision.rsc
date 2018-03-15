@@ -6,3 +6,6 @@ set [ find default-name=ether2 ] name=host_only
 
 /user add name=vagrant password=vagrant group=full
 /user ssh-keys import user=vagrant public-key-file=vagrant.key
+
+# https://wiki.mikrotik.com/wiki/Manual:System/Packages
+/system package disable calea,dude,gps,ipv6,kvm,lcd,ups
