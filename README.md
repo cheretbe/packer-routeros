@@ -1,7 +1,8 @@
 Mikrotik RouterOS (https://mikrotik.com)
 
 ```
-packer build -var 'ros_ver=6.40.6' -on-error=ask -force routeros.json
+curl http://download2.mikrotik.com/routeros/LATEST.6
+packer build -var 'ros_ver=6.41.3' -on-error=ask -force routeros.json
 
 vagrant plugin install vagrant-triggers
 ```
