@@ -15,8 +15,13 @@ Vagrant.configure("2") do |config|
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
   end
+
+  config.vm.provision "trigger", :option => "value" do |trigger|
+    trigger.fire do
+      run "vagrant ssh -- \"/interface ethernet reset-mac-address host_only\""
+    end
+  end
   config.trigger.instead_of :halt do
     run "vagrant ssh -- \"/system shutdown\""
   end
-end
-```
+end```
