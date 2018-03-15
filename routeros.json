@@ -16,20 +16,20 @@
         ["modifyvm", "{{.Name}}", "--rtcuseutc", "on"],
         ["modifyvm", "{{.Name}}", "--pae", "on"],
         ["modifyvm", "{{.Name}}", "--usb", "on"],
-        ["modifyvm", "{{.Name}}", "--usbehci", "off"]
+        ["modifyvm", "{{.Name}}", "--usbehci", "off"],
+        ["modifyvm", "{{.Name}}", "--nic2", "hostonly", "--hostonlyadapter2", "vboxnet0", "--cableconnected2", "on"]
       ],
       "iso_url": "https://download2.mikrotik.com/routeros/{{user `ros_ver`}}/mikrotik-{{user `ros_ver`}}.iso",
       "iso_checksum_type": "none",
       "http_directory": ".",
       "boot_command": [
         "ainy<wait10><enter>",
-        "<wait10><wait10><wait10><wait10>",
-        "admin<enter><wait>",
-        "<enter><wait>",
+        "<wait10><wait10>",
+        "admin<enter><wait><wait>",
+        "<enter><wait><wait>",
+        "n<wait><wait>",
         "<enter><wait5>",
-        "q<enter><wait5>",
-        "<enter><wait5>",
-        "/ip dhcp-client add disabled=no interface=ether1<enter>",
+        "/ip dhcp-client add disabled=no interface=ether1 add-default-route=no use-peer-dns=no use-peer-ntp=no<enter>",
         "<wait5>",
         "/tool fetch url=\"http://{{ .HTTPIP }}:{{ .HTTPPort }}/provision.rsc\" keep-result=yes dst-path=\"provision.rsc\"<enter>",
         "<wait5>",
@@ -42,7 +42,7 @@
       "virtualbox_version_file": "",
       "ssh_username": "admin",
       "ssh_password": "",
-      "ssh_wait_timeout": "60m",
+      "ssh_wait_timeout": "60s",
       "shutdown_command": "execute \"/system shutdown\"",
       "format": "ova"
     }
