@@ -8,6 +8,7 @@
       "vm_name": "routeros",
       "guest_os_type": "Other",
       "disk_size": "256",
+      "guest_os_type": "Linux26",
       "vboxmanage": [
         ["modifyvm", "{{.Name}}", "--memory", "128"],
         ["modifyvm", "{{.Name}}", "--acpi", "on"],
