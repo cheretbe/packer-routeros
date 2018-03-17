@@ -17,8 +17,7 @@
         ["modifyvm", "{{.Name}}", "--rtcuseutc", "on"],
         ["modifyvm", "{{.Name}}", "--pae", "on"],
         ["modifyvm", "{{.Name}}", "--usb", "on"],
-        ["modifyvm", "{{.Name}}", "--usbehci", "off"],
-        ["modifyvm", "{{.Name}}", "--nic2", "hostonly", "--hostonlyadapter2", "vboxnet0", "--cableconnected2", "on"]
+        ["modifyvm", "{{.Name}}", "--usbehci", "off"]
       ],
       "iso_url": "https://download2.mikrotik.com/routeros/{{user `ros_ver`}}/mikrotik-{{user `ros_ver`}}.iso",
       "iso_checksum_type": "none",
@@ -32,11 +31,10 @@
         "<enter><wait5>",
         "/ip dhcp-client add disabled=no interface=ether1 add-default-route=no use-peer-dns=no use-peer-ntp=no<enter>",
         "<wait5>",
-        "/tool fetch url=\"http://{{ .HTTPIP }}:{{ .HTTPPort }}/provision.rsc\" keep-result=yes dst-path=\"provision.rsc\"<enter>",
+        ":global packerHost \"http://{{ .HTTPIP }}:{{ .HTTPPort }}\"<enter>",
+        "/tool fetch url=\"$packerHost/setup.rsc\" keep-result=yes dst-path=\"setup.rsc\"<enter>",
         "<wait5>",
-        "/tool fetch url=\"http://{{ .HTTPIP }}:{{ .HTTPPort }}/vagrant_insecure.key\" keep-result=yes dst-path=\"vagrant.key\"<enter>",
-        "<wait5>",
-        "/import pr<tab><enter>",
+        "/import setup.rsc<enter>",
         "<wait5>"
       ],
       "guest_additions_mode": "disable",
