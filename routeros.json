@@ -35,7 +35,7 @@
         "/tool fetch url=\"$packerHost/setup.rsc\" keep-result=yes dst-path=\"setup.rsc\"<enter>",
         "<wait5>",
         "/import setup.rsc<enter>",
-        "<wait5>"
+        "<wait10><wait10><wait10>"
       ],
       "guest_additions_mode": "disable",
       "virtualbox_version_file": "",

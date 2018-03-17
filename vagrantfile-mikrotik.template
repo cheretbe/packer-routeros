@@ -23,10 +23,7 @@ Vagrant.configure(2) do |config|
 
   config.vm.provision "trigger", :option => "value" do |trigger|
     trigger.fire do
-      run "vagrant ssh -- /interface ethernet set [ find default-name=ether1 ] name=host_nat"
-      run "vagrant ssh -- /interface ethernet set [ find default-name=ether2 ] name=host_only"
-      run "vagrant ssh -- /interface ethernet reset-mac-address host_only"
-      run "vagrant ssh -- /ip dhcp-client add disabled=no interface=host_only add-default-route=no use-peer-dns=no use-peer-ntp=no"
+      run "vagrant ssh -- /system script run provision"
     end
   end
   config.trigger.instead_of :halt do
