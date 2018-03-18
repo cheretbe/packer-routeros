@@ -17,9 +17,17 @@ set [ find default-name=ether1 ] name=host_nat
 :put "Fetching $packerHost/provision.rsc"
 /tool fetch url="$packerHost/provision.rsc" keep-result=yes dst-path="provision.rsc"
 :delay 5
-:put "Adding provision script"
+:put "Adding 'provision' script"
 /system script add name=provision source=[/file get provision.rsc contents]
 :delay 5
 /file remove provision.rsc
+
+:put "Fetching $packerHost/enable_smb.rsc"
+/tool fetch url="$packerHost/enable_smb.rsc" keep-result=yes dst-path="enable_smb.rsc"
+:delay 5
+:put "Adding 'enable_smb' script"
+/system script add name=enable_smb source=[/file get enable_smb.rsc contents]
+:delay 5
+/file remove enable_smb.rsc
 
 /file remove setup.rsc

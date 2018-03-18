@@ -23,8 +23,8 @@
       "iso_checksum_type": "none",
       "http_directory": ".",
       "boot_command": [
-        "ainy<wait10><enter>",
-        "<wait10><wait10>",
+        "<wait5>ainy<wait10><wait10><enter>",
+        "<wait10><wait10><wait10>",
         "admin<enter><wait><wait>",
         "<enter><wait><wait>",
         "n<wait><wait>",
@@ -35,7 +35,7 @@
         "/tool fetch url=\"$packerHost/setup.rsc\" keep-result=yes dst-path=\"setup.rsc\"<enter>",
         "<wait5>",
         "/import setup.rsc<enter>",
-        "<wait10><wait10><wait10>"
+        "<wait10><wait10><wait10><wait10>"
       ],
       "guest_additions_mode": "disable",
       "virtualbox_version_file": "",

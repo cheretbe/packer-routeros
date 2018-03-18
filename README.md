@@ -1,10 +1,14 @@
 Mikrotik RouterOS (https://mikrotik.com)
 
-```
+```shell
 curl http://download2.mikrotik.com/routeros/LATEST.6
-rm packer_cache -rf && packer build -var 'ros_ver=6.41.3' -on-error=ask -force routeros.json
-
+# Linux
+rm packer_cache -rf & packer build -var 'ros_ver=6.41.3' -on-error=ask -force routeros.json
+rmdir /s /q packer_cache & packer build -var 'ros_ver=6.41.3' -on-error=ask -force routeros.json
+# Windows
 vagrant plugin install vagrant-triggers
+
+vagrant box add -f mt-test ./build/boxes/routeros.box
 ```
 
 ```ruby
