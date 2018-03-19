@@ -23,10 +23,10 @@ Vagrant.configure(2) do |config|
 
   config.vm.provision "trigger", :option => "value" do |trigger|
     trigger.fire do
-      run "vagrant ssh -- /system script run provision"
+      run "vagrant ssh #{@machine.name} -- /system script run provision"
     end
   end
   config.trigger.instead_of :halt do
-    run "vagrant ssh -- /system shutdown"
+    run "vagrant ssh #{@machine.name} -- /system shutdown"
   end
 end
