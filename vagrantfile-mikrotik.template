@@ -3,14 +3,14 @@
 
 required_plugins = %w( vagrant-triggers )
 
+# For automatic installation see
+# https://github.com/cheretbe/notes/blob/master/vagrant.md#automatic-plugins-installation
 plugins_to_install = required_plugins.select { |plugin| not Vagrant.has_plugin? plugin }
 if not plugins_to_install.empty?
-  puts "Installing plugins: #{plugins_to_install.join(' ')}"
-  if system "vagrant plugin install #{plugins_to_install.join(' ')}"
-    exec "vagrant #{ARGV.join(' ')}"
-  else
-    abort "Installation of one or more plugins has failed. Aborting."
-  end
+  puts "This Vagrantfile needs one or more additional plugins to be installed: #{plugins_to_install.join(', ')}"
+  puts "Use the following command:\n\n"
+  puts "vagrant plugin install #{plugins_to_install.join(' ')}\n\n"
+  abort "Installation of one or more additional plugins needed. Aborting."
 end
 
 Vagrant.configure(2) do |config|
