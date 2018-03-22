@@ -9,7 +9,7 @@
   :put "Waiting for 'ether2' interface to become available..."
   :delay 5
   :set counter ($counter + 1)
-  :set continue ([:len [/interface ethernet find default-name="ether3"]] = 0)
+  :set continue ([:len [/interface ethernet find default-name="ether2"]] = 0)
   :if ($counter=5) do={:set continue false}
 }
 
