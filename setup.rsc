@@ -1,6 +1,3 @@
-/interface ethernet
-set [ find default-name=ether1 ] name=host_nat
-
 :global packerHost
 :put "Fetching $packerHost/vagrant_insecure.key"
 /tool fetch url="$packerHost/vagrant_insecure.key" keep-result=yes dst-path="vagrant.key"
