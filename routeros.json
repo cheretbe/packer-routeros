@@ -1,6 +1,6 @@
 {
   "variables": {
-    "ros_ver": "6.39.3"
+    "ros_ver": ""
   },
   "builders": [
     {
@@ -19,7 +19,7 @@
         ["modifyvm", "{{.Name}}", "--usb", "on"],
         ["modifyvm", "{{.Name}}", "--usbehci", "off"]
       ],
-      "iso_url": "https://download2.mikrotik.com/routeros/{{user `ros_ver`}}/mikrotik-{{user `ros_ver`}}.iso",
+      "iso_url": "https://download.mikrotik.com/routeros/{{user `ros_ver`}}/mikrotik-{{user `ros_ver`}}.iso",
       "iso_checksum_type": "none",
       "http_directory": ".",
       "boot_command": [
