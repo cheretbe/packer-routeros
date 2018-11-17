@@ -18,6 +18,7 @@ vagrant plugin install vagrant-triggers
 
 Vagrant.configure("2") do |config|
   config.vm.box = "cheretbe/routeros"
+  # config.vm.box = "mt-test"
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
   end

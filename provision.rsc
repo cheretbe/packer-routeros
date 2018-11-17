@@ -2,6 +2,8 @@
 :global hostNatMACaddr
 :global hostOnlyMACaddr
 
+:if ([:len [/file find name=dummy_provision.2del]] > 0) do={ /file remove dummy_provision.2del }
+
 :local continue ([:len [/interface ethernet find]] != $vmNICCount)
 :local counter 0
 :while ($continue) do={

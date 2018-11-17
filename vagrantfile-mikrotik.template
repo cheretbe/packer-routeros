@@ -1,29 +1,17 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-required_plugins = %w( vagrant-triggers )
-
-# For automatic installation see
-# https://github.com/cheretbe/notes/blob/master/vagrant.md#automatic-plugins-installation
-plugins_to_install = required_plugins.select { |plugin| not Vagrant.has_plugin? plugin }
-if not plugins_to_install.empty?
-  puts "This Vagrantfile needs one or more additional plugins to be installed: #{plugins_to_install.join(', ')}"
-  puts "Use the following command:\n\n"
-  puts "vagrant plugin install #{plugins_to_install.join(' ')}\n\n"
-  abort "Installation of one or more additional plugins needed. Aborting."
-end
-
 def quoted_string_to_mac_address(str)
   # "0800278917AB" ==> 08:00:27:89:17:AB
   return (str[1..2] + ":" + str[3..4] + ":" + str[5..6] +
     ":" + str[7..8] + ":" + str[9..10] + ":" + str[11..12])
 end
 
-def init_mac_address_list()
+def init_mac_address_list(machine_id)
   virtualbox = VagrantPlugins::ProviderVirtualBox::Driver::Meta.new
   vm_nic_count = 0
   vm_info = Hash.new
-  virtualbox.execute("showvminfo", @machine.id, "--machinereadable").split("\n").each do |info_line|
+  virtualbox.execute("showvminfo", machine_id, "--machinereadable").split("\n").each do |info_line|
     info_name, info_value = info_line.split("=", 2)
     vm_info[info_name] = info_value
 
@@ -46,26 +34,37 @@ def init_mac_address_list()
   return vm_nic_count
 end
 
-
 Vagrant.configure(2) do |config|
   config.ssh.username = "vagrant"
-  #config.ssh.password = "vagrant"
+  # config.ssh.password = "vagrant"
+  # config.ssh.shell  = "\#"
+  # config.ssh.sudo_command = "\#"
   config.ssh.keys_only = true
   config.ssh.insert_key = false
   config.vm.synced_folder ".", "/vagrant", disabled: true
   config.vm.network "private_network", type: "dhcp", auto_config: false
+  config.vm.provider "virtualbox" do |vb|
+    vb.check_guest_additions = false
+  end
 
-  config.vm.provision "trigger", :option => "value" do |trigger|
-    trigger.fire do
-      vm_nic_count = init_mac_address_list()
+  # Not used because of the issue #2
+  # config.vm.provision "shell", inline: "/file print", upload_path: "dummy_provision.2del"
+
+  # This should run after provision. But we use "after up" because of the issue #2
+  config.trigger.after :up do |trigger|
+    trigger.ruby do |env,machine|
+      vm_nic_count = init_mac_address_list(machine.id)
       # [!] vm_NIC_mac_addresses array is 0-based
-      run "vagrant ssh #{@machine.name} -- ':global vmNICCount #{vm_nic_count}; " +
+      system "vagrant ssh #{machine.name} -- ':global vmNICCount #{vm_nic_count}; " +
         ":global hostNatMACaddr \"" + $vm_NIC_mac_addresses[0] + "\"; " +
         ":global hostOnlyMACaddr \"" + $vm_NIC_mac_addresses[1] + "\"'"
-      run "vagrant ssh #{@machine.name} -- /system script run provision"
+      system "vagrant ssh #{machine.name} -- /system script run provision"
     end
   end
-  config.trigger.instead_of :halt do
-    run "vagrant ssh #{@machine.name} -- /system shutdown"
+
+  config.trigger.before :halt do |trigger|
+    trigger.ruby do |env,machine|
+      system ("vagrant ssh #{machine.name} -- ':execute \{ :delay 5; /system shutdown \}'")
+    end
   end
 end
