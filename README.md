@@ -1,11 +1,13 @@
 Mikrotik RouterOS (https://mikrotik.com)
 
 ```shell
-curl http://download2.mikrotik.com/routeros/LATEST.6
 # Linux
-rm packer_cache -rf; packer build -var 'ros_ver=6.41.3' -on-error=ask -force routeros.json
+curl http://download2.mikrotik.com/routeros/LATEST.6
+rm packer_cache -rf; packer build -var 'ros_ver=6.44.2' -on-error=ask -force routeros.json
+
 # Windows
-rmdir /s /q packer_cache & packer build -var 'ros_ver=6.41.3' -on-error=ask -force routeros.json
+powershell '[System.Text.Encoding]::ASCII.GetString((Invoke-WebRequest "http://download2.mikrotik.com/routeros/LATEST.6").Content)'
+rmdir /s /q packer_cache && packer build -var "ros_ver=6.44.2" -on-error=ask -force routeros.json
 
 vagrant box add -f mt-test ./build/boxes/routeros.box
 
@@ -23,4 +25,8 @@ Vagrant.configure("2") do |config|
     vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
   end
 end
+```
+
+```
+system "vagrant ssh #{machine.name} -- :global aaa [:toarray \"aaa1, aaa2, aaa3\"]"
 ```
