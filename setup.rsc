@@ -19,12 +19,4 @@
 :delay 5
 /file remove provision.rsc
 
-:put "Fetching $packerHost/enable_smb.rsc"
-/tool fetch url="$packerHost/enable_smb.rsc" keep-result=yes dst-path="enable_smb.rsc"
-:delay 5
-:put "Adding 'enable_smb' script"
-/system script add name=enable_smb source=[/file get enable_smb.rsc contents]
-:delay 5
-/file remove enable_smb.rsc
-
 /file remove setup.rsc
