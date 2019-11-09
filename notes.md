@@ -1,3 +1,10 @@
+* https://www.vagrantup.com/docs/plugins/guests.html
+* https://www.vagrantup.com/docs/plugins/guest-capabilities.html
+* https://github.com/hashicorp/vagrant/blob/master/plugins/guests/windows/plugin.rb
+* search pattern `filename:Vagrantfile guest require_relative Vagrant.plugin`
+* https://github.com/bensallen/rancheros-box/blob/master/vagrant_rancheros_guest_plugin.rb
+
+
 ```ruby
   config.trigger.after :up, :provision, :reload, :resume do |trigger|
     trigger.ruby do |env,machine|
