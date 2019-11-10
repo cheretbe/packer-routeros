@@ -4,6 +4,19 @@
 * search pattern `filename:Vagrantfile guest require_relative Vagrant.plugin`
 * https://github.com/bensallen/rancheros-box/blob/master/vagrant_rancheros_guest_plugin.rb
 
+```ruby
+# https://docs.ruby-lang.org/en/2.5.0/Open3.html
+# Open3.popen2('ls', '-lha', '/') do |stdin, stdout, status_thread|
+has_error = false
+Open3.popen2e('./dummy.sh') do |stdin, stdout_stderr, status_thread|
+  stdout_stderr.each_line do |line|
+    puts "LINE: #{line}"
+    has_error = true if line.start_with?("ROS ERROR:")
+  end
+  raise "Unzip failed"  unless status_thread.value.success?
+  raise "Unzip kind of failed" if has_error
+end
+```
 
 ```ruby
   config.trigger.after :up, :provision, :reload, :resume do |trigger|
