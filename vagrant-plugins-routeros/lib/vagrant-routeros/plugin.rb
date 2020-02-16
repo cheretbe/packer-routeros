@@ -16,14 +16,24 @@ module VagrantPlugins
         Cap::Halt
       end
 
-      provisioner "routeros" do
+      provisioner "routeros_command" do
         require_relative "provisioner"
-        Provisioner
+        CommandProvisioner
       end
 
-      config("routeros", :provisioner) do
+      config("routeros_command", :provisioner) do
         require_relative "provisioner"
-        ProvisionerConfig
+        CommandProvisionerConfig
+      end
+
+      provisioner "routeros_file" do
+        require_relative "provisioner"
+        FileProvisioner
+      end
+
+      config("routeros_file", :provisioner) do
+        require_relative "provisioner"
+        FileProvisionerConfig
       end
     end
   end
