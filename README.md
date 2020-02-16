@@ -1,6 +1,13 @@
 Mikrotik RouterOS (https://mikrotik.com)
 
 ```shell
+cd vagrant-plugin-builder
+vagrant up && vagrant ssh
+cd /media/sf_packer-mikrotik/vagrant-plugins-routeros
+bundle install; bundle exec rake build
+```
+
+```shell
 # Linux
 curl http://download2.mikrotik.com/routeros/LATEST.6
 rm packer_cache -rf; packer build -var 'ros_ver=6.44.2' -on-error=ask -force routeros.json
