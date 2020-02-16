@@ -22,9 +22,6 @@ vagrant plugin install vagrant-triggers
 ```
 
 ```ruby
-# -*- mode: ruby -*-
-# vi: set ft=ruby :
-
 Vagrant.configure("2") do |config|
   config.vm.box = "cheretbe/routeros"
   # config.vm.box = "mt-test"
@@ -32,6 +29,11 @@ Vagrant.configure("2") do |config|
     vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]
   end
 end
+```
+
+`~/.vagrant.d/boxes/mt-test/0/virtualbox/Vagrantfile`:
+```ruby
+load "/home/user/projects/packer-mikrotik/vagrantfile-mikrotik.template"
 ```
 
 ```

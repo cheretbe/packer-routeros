@@ -1,3 +1,6 @@
+:put "Importing 'vagrant_provision_mac_addr.rsc'"
+/import vagrant_provision_mac_addr.rsc
+
 :global vmNICCount
 :global vmNICMACs
 :local hostNatMACaddr [:pick $vmNICMACs 0]

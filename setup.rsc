@@ -11,12 +11,7 @@
 :put "Disabling packages"
 /system package disable calea,dude,gps,ipv6,kvm,lcd,ups
 
-:put "Fetching $packerHost/provision.rsc"
-/tool fetch url="$packerHost/provision.rsc" keep-result=yes dst-path="provision.rsc"
-:delay 5
-:put "Adding 'provision' script"
-/system script add name=provision source=[/file get provision.rsc contents]
-:delay 5
-/file remove provision.rsc
+:put "Fetching $packerHost/vagrant_provision.rsc"
+/tool fetch url="$packerHost/vagrant_provision.rsc" keep-result=yes dst-path="vagrant_provision.rsc"
 
 /file remove setup.rsc

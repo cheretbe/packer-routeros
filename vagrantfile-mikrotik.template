@@ -53,6 +53,7 @@ module VagrantPlugins
 
           temp_file = Tempfile.new("vagrant-routeros")
           begin
+            temp_file.write(":put \"Initializing global MAC address list\"\r\n")
             temp_file.write(":global vmNICMACs [:toarray \"" + vm_NIC_mac_addresses.join(", ") + "\"]\r\n")
             temp_file.write(":global vmNICCount #{vm_nic_count}\r\n")
             temp_file.close
@@ -85,9 +86,9 @@ Vagrant.configure(2) do |config|
     vb.check_guest_additions = false
   end
 
-  config.vm.provision "routeros", name: "MAC addresses init",
-    inline: "/import vagrant_provision_mac_addr.rsc"
+  # config.vm.provision "routeros", name: "MAC addresses init",
+  #   inline: "/import vagrant_provision_mac_addr.rsc"
 
   config.vm.provision "routeros", name: "Initial provision",
-    inline: "/system script run provision"
+    inline: "/import vagrant_provision.rsc"
 end
