@@ -1,0 +1,17 @@
+---
+- name: Ruby development environment
+  hosts: all
+
+  tasks:
+  - name: Add user 'vagrant' to group 'vboxsf'
+    become: yes
+    user:
+      name: vagrant
+      groups: vboxsf
+      append: yes
+
+  roles:
+    - name: Install ruby
+      role: rvm.ruby
+      rvm1_rubies: ['ruby-2.5.7']
+      rvm1_user: 'vagrant'
