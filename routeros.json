@@ -52,7 +52,11 @@
       "keep_input_artifact": false,
       "compression_level": 9,
       "output": "build/boxes/routeros.box",
-      "vagrantfile_template": "vagrantfile-mikrotik.template"
+      "vagrantfile_template": "vagrantfile-mikrotik.template",
+      "include": [
+        "vagrant-plugins-routeros/pkg/vagrant-routeros-{{user `vagrant_routeros_plugin_version`}}.gem",
+        "vagrant-plugins-routeros/vagrant_routeros_plugin_version.json"
+      ]
     }
   ]
 }

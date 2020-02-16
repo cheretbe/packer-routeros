@@ -1,7 +1,24 @@
+require "json"
+
 def quoted_string_to_mac_address(str)
   # "0800278917AB" ==> 08:00:27:89:17:AB
   return (str[1..2] + ":" + str[3..4] + ":" + str[5..6] +
     ":" + str[7..8] + ":" + str[9..10] + ":" + str[11..12])
+end
+
+version_file = File.open(File.dirname(__FILE__) + "/vagrant_routeros_plugin_version.json")
+begin
+  plugin_version = JSON.load(version_file)["vagrant_routeros_plugin_version"]
+ensure
+  version_file.close
+end
+
+if not Vagrant.has_plugin?("vagrant-routeros", plugin_version)
+  if system("vagrant plugin install " + File.dirname(__FILE__) + "/vagrant-routeros-#{plugin_version}.gem")
+    exec "vagrant #{ARGV.join(' ')}"
+  else
+    abort "Installation of 'vagrant-routeros' plugin has failed. Aborting."
+  end
 end
 
 def init_mac_address_list(machine)
