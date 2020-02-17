@@ -16,6 +16,11 @@ module VagrantPlugins
         Cap::Halt
       end
 
+      guest_capability('routeros', 'change_host_name') do
+        require_relative 'cap/change_host_name'
+        Cap::ChangeHostName
+      end
+
       provisioner "routeros_command" do
         require_relative "provisioner"
         CommandProvisioner
