@@ -8,12 +8,17 @@ end
 
 version_file = File.open(File.dirname(__FILE__) + "/vagrant_routeros_plugin_version.json")
 begin
-  plugin_version = JSON.load(version_file)["vagrant_routeros_plugin_version"]
+  plugin_version = Gem::Version.new(JSON.load(version_file)["vagrant_routeros_plugin_version"])
 ensure
   version_file.close
 end
 
-if not Vagrant.has_plugin?("vagrant-routeros", plugin_version)
+plugin_version_is_ok = Vagrant::Plugin::Manager.instance.installed_specs.any? do |spec|
+  match = spec.name == "vagrant-routeros"
+  next match if spec.version >= plugin_version
+end
+
+if not plugin_version_is_ok
   if system("vagrant plugin install " + File.dirname(__FILE__) + "/vagrant-routeros-#{plugin_version}.gem")
     exec "vagrant #{ARGV.join(' ')}"
   else

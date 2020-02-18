@@ -39,9 +39,11 @@ Vagrant.configure("2") do |config|
 end
 ```
 
+
 `~/.vagrant.d/boxes/mt-test/0/virtualbox/Vagrantfile`:
 ```ruby
-load "/home/user/projects/packer-mikrotik/vagrantfile-mikrotik.template"
+# ln -s /home/user/projects/packer-mikrotik/vagrantfile-mikrotik.template template.rb
+require (File.dirname(__FILE__) + "/template")
 ```
 
 ```
