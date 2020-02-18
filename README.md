@@ -23,6 +23,12 @@ vagrant box add -f mt-test ./build/boxes/routeros.box
 vagrant plugin install vagrant-triggers
 ```
 
+```shell
+vagrant cloud box show cheretbe/routeros
+curl -sS https://app.vagrantup.com/api/v1/box/cheretbe/routeros | jq -r ".current_version.version"
+
+```
+
 ```ruby
 Vagrant.configure("2") do |config|
   config.vm.box = "cheretbe/routeros"
