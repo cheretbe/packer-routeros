@@ -9,7 +9,10 @@ bundle install; bundle exec rake build
 
 ```shell
 # Linux
-curl http://download2.mikrotik.com/routeros/LATEST.6
+curl http://upgrade.mikrotik.com/routeros/LATEST.6
+# long-term
+curl http://upgrade.mikrotik.com/routeros/LATEST.6fix
+
 rm packer_cache -rf; packer build -var 'ros_ver=6.46.3' \
   -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json \
   -on-error=ask -force routeros.json
