@@ -1,10 +1,61 @@
 #!/usr/bin/env python3
 
 import sys
+import os
+import json
 import PyInquirer
 import requests
 import subprocess
 import packaging.version
+
+script_dir = os.path.dirname(os.path.realpath(__file__))
+
+def ask_for_confirmation(prompt):
+    conf_questions = [
+        {
+            "type": "confirm",
+            "name": "continue",
+            "message": prompt,
+            "default": True
+        }
+    ]
+    conf_answers = PyInquirer.prompt(conf_questions)
+    return (bool(conf_answers) and conf_answers["continue"])
+
+def do_build_plugin():
+    vm_dir = os.path.join(script_dir, "tools/vagrant-plugin-builder")
+    current_vm_state = ""
+    print("Building 'vagrant-routeros' plugin...")
+    for line in subprocess.check_output("vagrant status --machine-readable",
+            cwd=vm_dir, shell=True).decode("utf-8").splitlines():
+        values = line.split(",")
+        if len(values) > 3:
+            if values[1] == "default" and values[2] == "state":
+                current_vm_state = values[3]
+    vm_needs_creation = current_vm_state == "not_created"
+    vm_needs_start = current_vm_state != "running"
+    vm_needs_halt = current_vm_state == "poweroff"
+
+    if vm_needs_creation:
+        print("The VM in 'tools/vagrant-plugin-builder' is not created")
+        print("This script will create the VM and destroy if after the build")
+        if not ask_for_confirmation("Continue?"):
+            sys.exit(1)
+
+    if vm_needs_start:
+        subprocess.check_call("vagrant up", cwd=vm_dir, shell=True)
+
+    subprocess.check_call("vagrant ssh -- '(source .bash_profile; "
+        "cd /mnt/packer-mikrotik/vagrant-plugins-routeros/; "
+        "bundle install; "
+        "bundle exec rake build)'",
+        cwd=vm_dir, shell=True)
+
+    if vm_needs_creation:
+        subprocess.check_call("vagrant destroy -f", cwd=vm_dir, shell=True)
+    elif vm_needs_halt:
+        subprocess.check_call("vagrant halt", cwd=vm_dir, shell=True)
+
 
 questions = [
     {
@@ -16,11 +67,11 @@ questions = [
     }
 ]
 
-# answers = PyInquirer.prompt(questions)
-# if not answers:
-#     sys.exit(1)
-# routeros_branch = answers["branch"]
-routeros_branch = "routeros-long-term"
+answers = PyInquirer.prompt(questions)
+if not answers:
+    sys.exit(1)
+routeros_branch = answers["branch"]
+# routeros_branch = "routeros-long-term"
 
 if routeros_branch == "routeros-long-term":
     version_url = "http://upgrade.mikrotik.com/routeros/LATEST.6fix"
@@ -33,51 +84,47 @@ response = requests.get(version_url)
 ros_version = response.text.split(" ")[0]
 print(ros_version)
 
-questions = [
-    {
-        "type": "confirm",
-        "name": "continue",
-        "message": "Do you want to continue with building?",
-        "default": True
-    }
-]
-# answers = PyInquirer.prompt(questions)
-# if (not answers) or (not answers["continue"]):
-#     sys.exit(1)
+if not ask_for_confirmation("Do you want to continue with building?"):
+    sys.exit(1)
 
-print("Building...")
+build_plugin = True
+with open(os.path.join(script_dir, "vagrant-plugins-routeros/vagrant_routeros_plugin_version.json")) as f:
+    plugin_version = json.load(f)["vagrant_routeros_plugin_version"]
+if os.path.isfile(os.path.join(script_dir,
+        "vagrant-plugins-routeros/pkg/vagrant-routeros-{}.gem".format(plugin_version))):
+    print("'vagrant-routeros' package version {} has alredy been built".format(plugin_version))
+    build_plugin = not ask_for_confirmation("Do you want to use existing gem file without rebuilding it?")
+if build_plugin:
+    do_build_plugin()
 
-# subprocess.check_call("packer build -var \"ros_ver={}\" "
-#     "-var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json "
-#     "-on-error=ask -force routeros.json".format(ros_version), shell=True)
 
-# [!!!] Remove after debug
-routeros_branch = "publish-test"
+print("Building the box...")
+
+subprocess.check_call("packer build -var \"ros_ver={}\" "
+    "-var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json "
+    "-on-error=ask -force routeros.json".format(ros_version), shell=True)
+
+# routeros_branch = "publish-test"
 
 response = requests.get("https://app.vagrantup.com/api/v1/box/cheretbe/{}".format(routeros_branch))
-current_version = response.json()["current_version"]["version"]
-print("Currently released version: {}".format(current_version))
-current_version, current_subversion = current_version.split("-")
+if response.json()["current_version"]:
+    current_version = response.json()["current_version"]["version"]
+    print("Currently released version: {}".format(current_version))
+    current_version, current_subversion = current_version.split("-")
 
-if current_version == ros_version:
-    new_version = current_version + "-" + str(int(current_subversion) + 1)
-elif packaging.version.parse(ros_version) > packaging.version.parse(current_version):
-    new_version = ros_version + "-0"
+    if current_version == ros_version:
+        new_version = current_version + "-" + str(int(current_subversion) + 1)
+    elif packaging.version.parse(ros_version) > packaging.version.parse(current_version):
+        new_version = ros_version + "-0"
+    else:
+        raise Exception("Version to be released ({}) is lesser than currently "
+            "released ({})".format(ros_version, current_version))
 else:
-    raise Exception("Version to be released ({}) is lesser than currently "
-        "released ({})".format(ros_version, current_version))
+    new_version = ros_version + "-0"
 
-questions = [
-    {
-        "type": "confirm",
-        "name": "continue",
-        "message": ("Do you want to release version '{}' of the box?".format(new_version)),
-        "default": True
-    }
-]
-answers = PyInquirer.prompt(questions)
-if (not answers) or (not answers["continue"]):
+if not ask_for_confirmation("Do you want to release version '{}' of the box?".format(new_version)):
     sys.exit(1)
+
 
 questions = [
     {
@@ -102,6 +149,7 @@ if subprocess.call("vagrant cloud auth login --check", shell=True,
     print("Please provide your login information to authenticate.")
     subprocess.check_call("vagrant cloud auth login", shell=True)
 
+# TODO: (?) analyse output and check username 'cheretbe' is configured
 for line in subprocess.check_output("vagrant cloud auth whoami", shell=True).decode("utf-8").splitlines():
     print(line)
 

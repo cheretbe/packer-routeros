@@ -1,7 +1,7 @@
 Mikrotik RouterOS (https://mikrotik.com)
 
 ```shell
-cd vagrant-plugin-builder
+cd tools/vagrant-plugin-builder
 vagrant up && vagrant ssh
 cd /mnt/packer-mikrotik/vagrant-plugins-routeros/
 bundle install; bundle exec rake build
