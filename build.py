@@ -97,12 +97,18 @@ if os.path.isfile(os.path.join(script_dir,
 if build_plugin:
     do_build_plugin()
 
-
-print("Building the box...")
-
-subprocess.check_call("packer build -var \"ros_ver={}\" "
-    "-var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json "
-    "-on-error=ask -force routeros.json".format(ros_version), shell=True)
+box_file_name = "build/boxes/{}_{}.box".format(routeros_branch, ros_version)
+build_box = True
+if (not build_plugin) and os.path.isfile(box_file_name):
+    print("'{}' has alredy been built".format(box_file_name))
+    build_box = not ask_for_confirmation("Do you want to use existing box file without rebuilding it?")
+if build_box:
+    print("Building the box...")
+    subprocess.check_call("packer build -var \"ros_ver={}\" "
+        "-var \"box_file_name={}\" "
+        "-var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json "
+        "-on-error=ask -force routeros.json".format(ros_version, box_file_name),
+        shell=True)
 
 # routeros_branch = "publish-test"
 
@@ -154,9 +160,8 @@ for line in subprocess.check_output("vagrant cloud auth whoami", shell=True).dec
     print(line)
 
 print("Publishing 'cheretbe/{}' as version '{}'".format(routeros_branch, new_version))
-subprocess.check_call("vagrant cloud publish 'cheretbe/{}' {} virtualbox "
-    "build/boxes/routeros.box "
+subprocess.check_call("vagrant cloud publish 'cheretbe/{}' {} virtualbox {}"
     "--version-description '{}' "
     "--release --force"
-    "".format(routeros_branch, new_version, answers["description"]),
+    "".format(routeros_branch, new_version, box_file_name, answers["description"]),
     shell=True)

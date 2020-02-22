@@ -1,6 +1,7 @@
 {
   "variables": {
-    "ros_ver": ""
+    "ros_ver": "",
+    "box_file_name": "build/boxes/routeros.box"
   },
   "builders": [
     {
@@ -51,7 +52,7 @@
       "type": "vagrant",
       "keep_input_artifact": false,
       "compression_level": 9,
-      "output": "build/boxes/routeros.box",
+      "output": "{{ user `box_file_name`}}",
       "vagrantfile_template": "vagrantfile.template",
       "include": [
         "vagrant-plugins-routeros/pkg/vagrant-routeros-{{user `vagrant_routeros_plugin_version`}}.gem",
