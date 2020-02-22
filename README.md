@@ -1,4 +1,4 @@
-# Mikrotik RouterOS box for Vagrant
+# Mikrotik RouterOS boxes for Vagrant
 * https://mikrotik.com
 * https://www.vagrantup.com/
 * https://packer.io/
