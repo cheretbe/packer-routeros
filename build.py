@@ -112,10 +112,32 @@ if build_box:
 
 # routeros_branch = "publish-test"
 
-response = requests.get("https://app.vagrantup.com/api/v1/box/cheretbe/{}".format(routeros_branch))
-if response.json()["current_version"]:
-    current_version = response.json()["current_version"]["version"]
-    print("Currently released version: {}".format(current_version))
+if not ask_for_confirmation("Publish the box to Vagrant Cloud?"):
+    sys.exit(1)
+
+print("Checking Vagrant Cloud login...")
+
+if subprocess.call("vagrant cloud auth login --check", shell=True,
+        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL) != 0:
+    print("You are not currently logged in.")
+    print("Please provide your login information to authenticate.")
+    subprocess.check_call("vagrant cloud auth login", shell=True)
+
+cloud_user_name = ""
+for line in subprocess.check_output("vagrant cloud auth whoami", shell=True).decode("utf-8").splitlines():
+    print(line)
+    if "Currently logged in as" in line:
+        cloud_user_name = line.split(" ")[-1]
+
+if not cloud_user_name:
+    raise Exception("Could not detect current Vagrant Cloud user name")
+
+response = requests.get("https://app.vagrantup.com/api/v1/box/{}/{}"
+    .format(cloud_user_name, routeros_branch)).json()
+if response.get("current_version", ""):
+    current_version = response["current_version"]["version"]
+    print("Currently released version of '{}/{}': {}"
+        .format(cloud_user_name, routeros_branch, current_version))
     current_version, current_subversion = current_version.split("-")
 
     if current_version == ros_version:
@@ -126,6 +148,8 @@ if response.json()["current_version"]:
         raise Exception("Version to be released ({}) is lesser than currently "
             "released ({})".format(ros_version, current_version))
 else:
+    print("There is no currently released version of '{}/{}'"
+        .format(cloud_user_name, routeros_branch))
     new_version = ros_version + "-0"
 
 if not ask_for_confirmation("Do you want to release version '{}' of the box?".format(new_version)):
@@ -147,21 +171,14 @@ answers = PyInquirer.prompt(questions)
 if (not answers) or (not answers["description"]):
     sys.exit(1)
 
-print("Checking Vagrant Cloud login...")
-
-if subprocess.call("vagrant cloud auth login --check", shell=True,
-        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL) != 0:
-    print("You are not currently logged in.")
-    print("Please provide your login information to authenticate.")
-    subprocess.check_call("vagrant cloud auth login", shell=True)
-
-# TODO: (?) analyse output and check username 'cheretbe' is configured
-for line in subprocess.check_output("vagrant cloud auth whoami", shell=True).decode("utf-8").splitlines():
-    print(line)
-
-print("Publishing 'cheretbe/{}' as version '{}'".format(routeros_branch, new_version))
-subprocess.check_call("vagrant cloud publish 'cheretbe/{}' {} virtualbox {}"
-    "--version-description '{}' "
+print("Publishing '{}/{}' as version '{}'".format(cloud_user_name, routeros_branch, new_version))
+subprocess.check_call("vagrant cloud publish '{user}/{box}' {version} virtualbox {file} "
+    "--version-description '{description}' "
     "--release --force"
-    "".format(routeros_branch, new_version, box_file_name, answers["description"]),
+    .format(
+        user=cloud_user_name,
+        box=routeros_branch,
+        version=new_version,
+        file=box_file_name,
+        description=answers["description"]),
     shell=True)
