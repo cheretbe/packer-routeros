@@ -1,4 +1,11 @@
-Mikrotik RouterOS (https://mikrotik.com)
+## Mikrotik RouterOS box for Vagrant
+* https://mikrotik.com
+* https://www.vagrantup.com/
+* https://packer.io/
+
+#### Box URLs
+* Long-term branch: https://app.vagrantup.com/cheretbe/boxes/routeros-long-term
+* Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros
 
 ```shell
 cd tools/vagrant-plugin-builder
