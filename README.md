@@ -1,4 +1,4 @@
-## Mikrotik RouterOS box for Vagrant
+# Mikrotik RouterOS box for Vagrant
 * https://mikrotik.com
 * https://www.vagrantup.com/
 * https://packer.io/
@@ -7,6 +7,19 @@
 * Long-term branch: https://app.vagrantup.com/cheretbe/boxes/routeros-long-term
 * Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros
 
+#### Status
+:warning:`beta` - The boxes are fully functional, but this project is work-in-progress: breaking changes may be introduced at any time.
+
+## Usage
+```shell
+vagrant init cheretbe/routeros
+# or
+vagrant init cheretbe/routeros-long-term
+
+vagrant up
+```
+
+## Building the boxes
 ```shell
 cd tools/vagrant-plugin-builder
 vagrant up && vagrant ssh
