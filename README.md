@@ -10,6 +10,11 @@
 #### Status
 :warning:`beta` - The boxes are fully functional, but this project is work-in-progress: breaking changes may be introduced at any time.
 
+#### Plugin
+The boxes require `vagrant-routeros` plugin, which is bundled with box file and installed/updated automatically. The plugin is not
+stable enough to be published on [rubygems.org](https://rubygems.org/), that's why it is bundled. Eventually it shoud be moved to
+a separate repository and published separately.
+
 ## Usage
 ```shell
 vagrant init cheretbe/routeros
@@ -17,6 +22,26 @@ vagrant init cheretbe/routeros
 vagrant init cheretbe/routeros-long-term
 
 vagrant up
+```
+`vagrant-routeros` plugin provides two additional provisioners: `routeros_file`, `routeros_command` and guest capability to
+change name.<br>
+`routeros_file` provisioner allows you to upload a file from the host machine to the guest machine.<br>
+`routeros_command` allows you to execute a [RouterOS command](https://wiki.mikrotik.com/wiki/Manual:Scripting)
+within the guest machine.
+
+Vagrantfile example that uses this functionality
+```ruby
+Vagrant.configure("2") do |config|
+  config.vm.box = "cheretbe/routeros"
+  
+  # Change guest name
+  config.vm.hostname = "new-name"
+  # Execute command
+  config.vm.provision "routeros_command", name: "Command test", command: "/system resource print"
+  # Upload and execute a script file
+  config.vm.provision "routeros_file", name: "Upload test", source: "custom_script.rsc", destination: "custom_script.rsc"
+  config.vm.provision "routeros_command", name: "Exec custom script", command: "/import custom_script.rsc"
+end
 ```
 
 ## Building the boxes
