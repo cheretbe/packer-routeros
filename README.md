@@ -45,24 +45,51 @@ end
 ```
 
 ## Building the boxes
+
+#### Option 1. Use interactive script
+
+```shell
+./build.py
+```
+
+The script needs Python3 installed and uses `PyInquirer` package. It can be
+installed using pip
+```shell
+pip3 install PyInquirer
+```
+
+#### Option 2. Manual build.
+1. Build `vagrant-routeros` plugin
 ```shell
 cd tools/vagrant-plugin-builder
 vagrant up && vagrant ssh
 cd /mnt/packer-mikrotik/vagrant-plugins-routeros/
-bundle install; bundle exec rake build
+bundle install && bundle exec rake build
+logout
+cd ../..
 ```
 
+2. Get current RouterOS version
 ```shell
-# Linux
-curl http://upgrade.mikrotik.com/routeros/LATEST.6
-# long-term
-curl http://upgrade.mikrotik.com/routeros/LATEST.6fix
+# Stable branch
+ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6 | cut -d' ' -f1)
+# long-term branch
+ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6fix | cut -d' ' -f1)
 
-rm packer_cache -rf; packer build -var 'ros_ver=6.46.3' \
+echo ${ros_version}
+```
+
+3. Build the box
+```shell
+rm packer_cache -rf; packer build -var ros_ver=${ros_version} \
   -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json \
   -on-error=ask -force routeros.json
+```
 
-# Windows
+4. Go to https://www.vagrantup.com/ and manually publish `build/boxes/routeros.box`
+
+#### Windows
+```batch
 powershell '[System.Text.Encoding]::ASCII.GetString((Invoke-WebRequest "http://download2.mikrotik.com/routeros/LATEST.6").Content)'
 rmdir /s /q packer_cache && packer build -var "ros_ver=6.44.2" -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json -on-error=ask -force routeros.json
 
