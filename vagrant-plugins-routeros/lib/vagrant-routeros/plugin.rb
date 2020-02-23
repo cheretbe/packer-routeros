@@ -40,6 +40,12 @@ module VagrantPlugins
         require_relative "provisioner"
         FileProvisionerConfig
       end
+
+      action_hook "router_os_mac_addr_setup" do |hook|
+        require_relative "mac_addr_setup"
+        # hook.before Vagrant::Action::Builtin::Provision, MacAddrSetup
+        hook.after Vagrant::Action::Builtin::WaitForCommunicator, MacAddrSetup
+      end
     end
   end
 end
