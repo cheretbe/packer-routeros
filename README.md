@@ -49,7 +49,7 @@ end
 ```
 
 #### Network configuration
-By default two network interfaces are confured in the VM: `NAT` (Vagrant's default) and `Host-only`, named `host_nat` and
+By default two network interfaces are configured in the VM: `NAT` (Vagrant's default) and `Host-only`, named `host_nat` and
 `host_only` respectively. Both interfaces configured as DHCP clients, but they **do not receive** default route and DNS server.
 This is done to isolate virtual environments from host's physical networks.<br>
 If you need Internet access in the VM you can configure `host_nat` adapter using the following RouterOS command:
