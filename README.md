@@ -70,7 +70,7 @@ If you need Internet access in the VM you can configure `host_nat` adapter using
 ```
 /ip dhcp-client set [find interface="host_nat"] use-peer-dns=yes add-default-route=yes
 ```
-
+------
 Currently guest capability "Configure networks" is not implemented. Therefore you can't configure static IP or DHCP for
 additional network interfaces like this:
 ```ruby
@@ -87,7 +87,22 @@ And then configure network addresses using RouterOS command:
 /ip dhcp-client add disabled=no interface=ether3
 /ip address add address=172.24.0.1/24 interface=ether4 network=172.24.0.0
 ```
-You can automate RouterOS commands execution by using `vagrant ssh -- <RouterOS command>` command or `routeros_file`/ `routeros_command` provisioners.
+------
+
+Interface order in the VM does not always match interface order in Vagrant file. To work around this issue the boxes contain
+a script file named `vagrant_provision_mac_addr.rsc`, that sets two global variables: `vmNICCount` and `vmNICMACs`. `vmNICCount`
+is used internally during provision, but you can use `vmNICMACs` to reference interface by index like this:
+```
+/import vagrant_provision_mac_addr.rsc
+:global vmNICMACs
+# vmNICMACs array is zero-based
+:local eth3MACaddr [:pick $vmNICMACs 2]
+:local eth3name [/interface ethernet get [find mac-address="$eth3MACaddr"] name]
+/ip address add address=172.24.0.1/24 interface=$eth3name network=172.24.0.0
+```
+
+------
+:bulb: You can automate RouterOS commands execution by using `vagrant ssh -- <RouterOS command>` command or `routeros_file`/ `routeros_command` provisioners.
 
 ## Building the boxes
 
