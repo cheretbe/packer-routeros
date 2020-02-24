@@ -161,7 +161,7 @@ questions = [
         "type": "editor",
         "name": "description",
         "message": "Please enter a version description (Alt+Enter to finish)",
-        "default": "**Version description**"
+        "default": "**Version description**<br>\nhttps://github.com/cheretbe/packer-routeros/blob/master/README.md"
         # 'eargs': {
         #     'editor':'default'
         # }
@@ -170,6 +170,8 @@ questions = [
 answers = PyInquirer.prompt(questions)
 if (not answers) or (not answers["description"]):
     sys.exit(1)
+
+description = answers["description"].replace("\n", "")
 
 print("Publishing '{}/{}' as version '{}'".format(cloud_user_name, routeros_branch, new_version))
 subprocess.check_call("vagrant cloud publish '{user}/{box}' {version} virtualbox {file} "
@@ -180,5 +182,5 @@ subprocess.check_call("vagrant cloud publish '{user}/{box}' {version} virtualbox
         box=routeros_branch,
         version=new_version,
         file=box_file_name,
-        description=answers["description"]),
+        description=description),
     shell=True)
