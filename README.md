@@ -2,6 +2,7 @@
 * https://mikrotik.com
 * https://www.vagrantup.com/
 * https://packer.io/
+* https://www.virtualbox.org/
 
 #### Box URLs
 * Long-term branch: https://app.vagrantup.com/cheretbe/boxes/routeros-long-term
@@ -14,6 +15,9 @@
 The boxes require `vagrant-routeros` plugin, which is bundled with box file and installed/updated automatically. The plugin is not
 stable enough to be published on [rubygems.org](https://rubygems.org/), that's why it is bundled. Eventually it shoud be moved to
 a separate repository and published separately.
+
+#### Providers
+Currently only `VirtualBox` provider is available.
 
 ## Usage
 ```shell
@@ -43,6 +47,25 @@ Vagrant.configure("2") do |config|
   config.vm.provision "routeros_command", name: "Exec custom script", command: "/import custom_script.rsc"
 end
 ```
+
+#### Network configuration
+Currently guest capability "Configure networks" is not implemented. Therefore you can't configure static IP or DHCP for
+additional network interfaces like this:
+```ruby
+config.vm.network "private_network", type: "dhcp", virtualbox__intnet: "vagrant-intnet-1"
+config.vm.network "private_network", ip: "172.24.0.1", virtualbox__intnet: "vagrant-intnet-2"
+```
+Instead you need to disable auto-config in Vagrantfile:
+```ruby
+config.vm.network "private_network", virtualbox__intnet: "vagrant-intnet-1", auto_config: false
+config.vm.network "private_network", virtualbox__intnet: "vagrant-intnet-2", auto_config: false
+```
+And then configure network addresses using RouterOS command:
+```
+/ip dhcp-client add disabled=no interface=ether3
+/ip address add address=172.24.0.1/24 interface=ether4 network=172.24.0.0
+```
+You can use `vagrant ssh` command or `routeros_file`/ `routeros_command` provisioners to automate this process.
 
 ## Building the boxes
 
