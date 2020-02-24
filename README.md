@@ -49,6 +49,14 @@ end
 ```
 
 #### Network configuration
+By default two network interfaces are confured in the VM: `NAT` (Vagrant's default) and `Host-only`, named `host_nat` and
+`host_only` respectively. Both interfaces configured as DHCP clients, but they **do not receive** default route and DNS server.
+This is done to isolate virtual environments from host's physical networks.<br>
+If you need Internet access in the VM you can configure `host_nat` adapter using the following RouterOS command:
+```
+/ip dhcp-client set [find interface="host_nat"] use-peer-dns=yes add-default-route=yes
+```
+
 Currently guest capability "Configure networks" is not implemented. Therefore you can't configure static IP or DHCP for
 additional network interfaces like this:
 ```ruby
@@ -65,7 +73,7 @@ And then configure network addresses using RouterOS command:
 /ip dhcp-client add disabled=no interface=ether3
 /ip address add address=172.24.0.1/24 interface=ether4 network=172.24.0.0
 ```
-You can use `vagrant ssh` command or `routeros_file`/ `routeros_command` provisioners to automate this process.
+You can automate RouterOS commands execution by using `vagrant ssh -- <RouterOS command>` command or `routeros_file`/ `routeros_command` provisioners.
 
 ## Building the boxes
 
