@@ -89,7 +89,7 @@ And then configure network addresses using RouterOS command:
 ```
 ------
 
-Interface order in the VM does not always match interface order in Vagrant file. To work around this issue the boxes contain
+Interface order in the VM does not always match interface order in the Vagrant file. To work around this issue the boxes contain
 a script file named `vagrant_provision_mac_addr.rsc`, that sets two global variables: `vmNICCount` and `vmNICMACs`. `vmNICCount`
 is used internally during provision, but you can use `vmNICMACs` to reference interface by index like this:
 ```
