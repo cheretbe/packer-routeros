@@ -19,6 +19,20 @@ a separate repository and published separately.
 #### Providers
 Currently only `VirtualBox` provider is available.
 
+#### Security
+By default the boxes have no firewall rules configured and come with two user accounts:
+* `admin` with empty(!) password
+* `vagrant` with password `vagrant` and Vagrant insecure private key authentication enabled
+
+:warning: This is unsecure setup intended for use in isolated testing environments. To secure
+a box you need at least change passwords for both users and the private SSH key for `vagrant` user. Disabling
+unused services and adding firewall rules is also recommended.<br>
+References:
+* https://wiki.mikrotik.com/wiki/Manual:User_Manager
+* [config.ssh.private_key_path](https://www.vagrantup.com/docs/vagrantfile/ssh_settings.html#config-ssh-private_key_path) parameter
+* https://wiki.mikrotik.com/wiki/Use_SSH_to_execute_commands_(DSA_key_login)#Host_to_RouterOS
+* https://wiki.mikrotik.com/wiki/Manual:Securing_Your_Router
+
 ## Usage
 ```shell
 vagrant init cheretbe/routeros
