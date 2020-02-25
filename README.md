@@ -58,7 +58,8 @@ Vagrant.configure("2") do |config|
   config.vm.provision "routeros_command", name: "Command test", command: "/system resource print"
   # Upload and execute a script file
   config.vm.provision "routeros_file", name: "Upload test", source: "custom_script.rsc", destination: "custom_script.rsc"
-  config.vm.provision "routeros_command", name: "Exec custom script", command: "/import custom_script.rsc"
+  config.vm.provision "routeros_command", name: "Exec custom script",
+    command: "/import custom_script.rsc", check_script_error: true
 end
 ```
 

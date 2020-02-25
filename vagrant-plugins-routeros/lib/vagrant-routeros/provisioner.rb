@@ -5,18 +5,24 @@ def upload_ros_file(machine, source_file_path, target_file_path)
   machine.communicate.upload(source_file_path, target_file_path)
 end
 
-def run_ros_command(machine, ros_command, check_script_error: false)
+def run_ros_command(machine, ros_command, check_script_error)
   machine.ui.detail("Executing '#{ros_command}'")
 
-  has_script_error = true
+  last_line = ""
   # https://docs.ruby-lang.org/en/2.5.0/Open3.html
   Open3.popen2e("vagrant", "ssh", "#{machine.name}", "--", ros_command) do |stdin, stdout_stderr, status_thread|
     stdout_stderr.each_line do |line|
       machine.ui.detail(line.chomp)
-      has_script_error = false if line.include?("Script file loaded and executed successfully")
+      last_line = line unless line.strip.empty?
     end
-    raise "ROS command failed"  unless status_thread.value.success?
-    raise "ROS command failed" if has_script_error and check_script_error
+    if not status_thread.value.success?
+      machine.ui.error("ROS command failed")
+      abort "RouterOS provisioner execution aborted"
+    end
+    if check_script_error and (not last_line.include?("Script file loaded and executed successfully"))
+      machine.ui.error("Script execution failed (no success marker)")
+      abort "RouterOS provisioner execution aborted"
+    end
   end
 end
 
@@ -25,23 +31,26 @@ module VagrantPlugins
 
     class CommandProvisioner < Vagrant.plugin("2", "provisioner")
       def provision
-        run_ros_command(@machine, @config.command)
+        run_ros_command(@machine, @config.command, @config.check_script_error)
       end
     end
 
     class CommandProvisionerConfig < Vagrant.plugin("2", "config")
       attr_accessor :command
+      attr_accessor :check_script_error
       attr_accessor :name
 
       def initialize
         super
-        @command     = UNSET_VALUE
-        @name        = UNSET_VALUE
+        @command            = UNSET_VALUE
+        @check_script_error = UNSET_VALUE
+        @name               = UNSET_VALUE
       end
 
       def finalize!
-        @command     = nil if @command == UNSET_VALUE
-        @name        = nil if @name == UNSET_VALUE
+        @command            = nil   if @command == UNSET_VALUE
+        @check_script_error = false if @check_script_error == UNSET_VALUE
+        @name               = nil   if @name == UNSET_VALUE
       end
 
       def validate(machine)
