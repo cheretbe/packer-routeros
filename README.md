@@ -24,7 +24,7 @@ By default the boxes have no firewall rules configured and come with two user ac
 * `admin` with empty(!) password
 * `vagrant` with password `vagrant` and Vagrant insecure private key authentication enabled
 
-:warning: This is unsecure setup intended for use in isolated testing environments. To secure
+:warning: This unsecure setup is intended for use in isolated testing environments. To secure
 a box you need at least change passwords for both users and the private SSH key for `vagrant` user. Disabling
 unused services and adding firewall rules is also recommended.<br>
 References:
@@ -61,6 +61,24 @@ Vagrant.configure("2") do |config|
   config.vm.provision "routeros_command", name: "Exec custom script", command: "/import custom_script.rsc"
 end
 ```
+
+#### Accessing the VM from host
+1. Interactive SSH session
+    * Use `vagrant ssh` command
+2. Built-in web interface (WebFig)
+    * Find out VM's IP using `vagrant ssh -- /ip address print where interface=host_only` command
+    * Note the returned IP and access it from your browser
+    * For example if the command has returned `172.28.128.3/24`, use `http://172.28.128.3` as the address
+3. Winbox (works fine on Linux using [Wine](https://www.winehq.org/))
+    * Download `winbox.exe` or `winbox64.exe` from https://mikrotik.com/download and launch it
+    * Option 1 - access by IP address
+        * Find out VM's IP using `vagrant ssh -- /ip address print where interface=host_only` command
+        * Enter the address in "Connect to" field
+    * Option 2 - access using neighbor discovery
+        * Select `Neighbors` tab in Winbox connect dialog
+        * Find the VM by it's name and click on IP or MAC address column to connect to it. If you click on IP address then IP will be used to connect, but if you click on MAC Address then MAC address will be used to connect to the VM
+4. Run commands during provision stage
+    * Use `routeros_file`/`routeros_command` provisioners in the Vagrantfile
 
 #### Network configuration
 By default two network interfaces are configured in the VM: `NAT` (Vagrant's default) and `Host-only`, named `host_nat` and
