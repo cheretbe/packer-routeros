@@ -1,0 +1,24 @@
+Vagrant.configure("2") do |config|
+  config.vm.define :router do |router|
+    router.vm.box = "cheretbe/routeros"
+    router.vm.hostname = "router"
+    router.vm.network "private_network", virtualbox__intnet: "vagrant-lan", auto_config: false
+
+    router.vm.provision "routeros_file", name: "Upload provision script",
+      source: "provision/router_provision.rsc", destination: "router_provision.rsc"
+    router.vm.provision "routeros_command", name: "Run provision script",
+      command: "/import router_provision.rsc", check_script_error: true
+  end
+
+  config.vm.define :client do |client|
+    client.vm.box = "cheretbe/routeros"
+    client.vm.hostname = "client"
+    client.vm.network "private_network", virtualbox__intnet: "vagrant-lan", auto_config: false
+
+    client.vm.provision "routeros_file", name: "Upload provision script",
+      source: "provision/client_provision.rsc", destination: "client_provision.rsc"
+    client.vm.provision "routeros_command", name: "Run provision script",
+      command: "/import client_provision.rsc", check_script_error: true
+  end
+
+end
