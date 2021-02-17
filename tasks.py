@@ -85,8 +85,13 @@ def build_routeros(context, routeros_branch):
         echo=True
     )
 
-    # TODO: create markdown file here
-    # jinja2.Environment(undefined=jinja2.StrictUndefined).from_string("Hello {{ something1 }}!").render(something="World")
+    description_md = pathlib.Path(box_file_name).with_suffix(".md")
+    print(f"Writing '{description_md}'")
+    with open(description_md, "w") as desc_f:
+        desc_f.write(
+            f"**Updated ROS to version {ros_version}**<br>"
+            "https://github.com/cheretbe/packer-routeros/blob/master/README.md"
+        )
 
 
 def build_plugin(context):
@@ -136,16 +141,21 @@ def do_cleanup():
     files_2del = (pathlib.Path(script_dir) / "build" / "boxes").glob("*.box")
     files_2del = itertools.chain(
         files_2del,
+        (pathlib.Path(script_dir) / "build" / "boxes").glob("*.md")
+    )
+    files_2del = itertools.chain(
+        files_2del,
         (pathlib.Path(script_dir) / "vagrant-plugins-routeros" / "pkg").glob("*.gem")
     )
     files_2del = itertools.chain(
         files_2del,
-        (pathlib.Path(script_dir) / "packer_cache").glob("*.*")
+        (pathlib.Path(script_dir) / "packer_cache").rglob("*")
     )
 
     for f_2del in files_2del:
-        print(f"  Deleting {f_2del}")
-        f_2del.unlink()
+        if f_2del.is_file():
+            print(f"  Deleting {f_2del}")
+            f_2del.unlink()
 
 
 @invoke.task(default=True)
