@@ -1,0 +1,24 @@
+Vagrant.configure("2") do |config|
+  config.vm.define :host1 do |host1|
+    host1.vm.box = "packer_test_routeros"
+    host1.vm.hostname = "host1"
+    host1.vm.network "private_network", virtualbox__intnet: "packer-test-lan", auto_config: false
+
+    host1.vm.provision "routeros_file", name: "Upload provision script",
+      source: "provision/host1_provision.rsc", destination: "host1_provision.rsc"
+    host1.vm.provision "routeros_command", name: "Run provision script",
+      command: "/import host1_provision.rsc", check_script_error: true
+  end
+
+  config.vm.define :host2 do |host2|
+    host2.vm.box = "packer_test_routeros-long-term"
+    host2.vm.hostname = "host2"
+    host2.vm.network "private_network", virtualbox__intnet: "packer-test-lan", auto_config: false
+
+    host2.vm.provision "routeros_file", name: "Upload provision script",
+      source: "provision/host2_provision.rsc", destination: "host2_provision.rsc"
+    host2.vm.provision "routeros_command", name: "Run provision script",
+      command: "/import host2_provision.rsc", check_script_error: true
+  end
+
+end

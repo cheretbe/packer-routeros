@@ -4,6 +4,7 @@ import sys
 import json
 import pathlib
 import itertools
+import distutils.version
 import requests
 import invoke
 import invoke.program
@@ -119,7 +120,7 @@ def build_plugin(context):
 
     if vm_needs_start:
         with context.cd(vm_dir):
-            context.run("vagrant up")
+            context.run("vagrant up", pty=True)
 
     with context.cd(vm_dir):
         context.run("vagrant ssh -- '(source .bash_profile; "
@@ -135,8 +136,17 @@ def build_plugin(context):
         with context.cd(vm_dir):
             context.run("vagrant halt")
 
-def do_cleanup():
+def remove_test_boxes(context):
+    for line in context.run("vagrant box list", hide=True).stdout.splitlines():
+        box_name = line.split(" ")[0]
+        if box_name in ("packer_test_routeros", "packer_test_routeros-long-term"):
+            context.run(f"vagrant box remove -f {box_name}", pty=True)
+
+
+def do_cleanup(context):
     print("Cleaning up...")
+
+    remove_test_boxes(context)
 
     files_2del = (pathlib.Path(script_dir) / "build" / "boxes").glob("*.box")
     files_2del = itertools.chain(
@@ -157,6 +167,22 @@ def do_cleanup():
             print(f"  Deleting {f_2del}")
             f_2del.unlink()
 
+def register_test_box(context, routeros_branch):
+    boxes_dir = pathlib.Path(script_dir) / "build" / "boxes"
+    box_versions = [item.stem.split("_")[1] for item in boxes_dir.glob(f"{routeros_branch}_*.box")]
+    if len(box_versions) == 0:
+        sys.exit(
+            f"Couldn't find files matching pattern 'build/boxes/{routeros_branch}"
+            f"_*.box'. Use 'inv {routeros_branch}' to build a box"
+        )
+    box_file = (
+        f"{routeros_branch}_" +
+        max(box_versions, key=distutils.version.LooseVersion) +
+        ".box"
+    )
+    box_file = str(boxes_dir / box_file)
+    context.run(f"vagrant box add packer_test_{routeros_branch} {box_file}", pty=True)
+
 
 @invoke.task(default=True)
 def show_help(context):
@@ -170,19 +196,52 @@ def show_help(context):
     print("  inv plugin --batch")
 
 @invoke.task()
-def cleanup(context): # pylint: disable=unused-argument
+def cleanup(context):
     """Delete build artefacts and temporary files"""
-    do_cleanup()
+    do_cleanup(context)
+
+@invoke.task()
+def test(context):
+    """Register temporary vagrant boxes and run some tests against them"""
+    print("Removing existing test boxes...")
+    remove_test_boxes(context)
+
+    print("Registering test boxes...")
+    register_test_box(context, "routeros")
+    register_test_box(context, "routeros-long-term")
+
+    print("Running tests...")
+    with context.cd(str(pathlib.Path(script_dir) / "tests" / "vagrant_local")):
+        context.run("vagrant up", pty=True)
+
+        ping_output = context.run(
+            "vagrant ssh host1 -- /ping count=3 192.168.199.11"
+        ).stdout
+        assert "received=3" in ping_output
+        assert "packet-loss=0%" in ping_output
+
+        ping_output = context.run(
+            "vagrant ssh host2 -- /ping count=3 192.168.199.10"
+        ).stdout
+        assert "received=3" in ping_output
+        assert "packet-loss=0%" in ping_output
+
+        context.run("vagrant halt", pty=True)
+        context.run("vagrant destroy -f", pty=True)
+
+    print("Removing test boxes...")
+    remove_test_boxes(context)
 
 @invoke.task(help={"batch": "Batch mode (disables interactive prompts)"})
 def build(context, batch=False):
     """Build all"""
 
     context.routeros.batch = batch
-    do_cleanup()
+    do_cleanup(context)
     build_plugin(context)
     build_routeros(context, routeros_branch="routeros-long-term")
     build_routeros(context, routeros_branch="routeros")
+    test(context)
 
 @invoke.task(help={"batch": "Batch mode (disables interactive prompts)"})
 def routeros_long_term(context, batch=False):
