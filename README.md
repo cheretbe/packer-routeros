@@ -125,16 +125,30 @@ is used internally during provision, but you can use `vmNICMACs` to reference in
 
 ## Building the boxes
 
-#### Option 1. Use interactive script.
+#### Option 1. Use [pyinvoke](http://www.pyinvoke.org/) script.
 
 ```shell
-./build.py
+inv build
+# Batch mode, no prompts
+inv build --batch
 ```
 
-The script needs Python3 installed and uses `PyInquirer` package. It can be
-installed using pip
+The script needs Python3 installed and uses additional packages. They can be
+installed using pip (setting up a virtual environment is strongly recommended -
+see `Step 2` [here](https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-programming-environment-on-an-ubuntu-16-04-server)
+for details)
 ```shell
-pip3 install PyInquirer
+pip3 install -r requirements.txt
+```
+
+Go to https://www.vagrantup.com/ and manually publish `build/boxes/routeros*.box` files or
+use [vagrant_box_publish.py](https://github.com/cheretbe/ao-env/blob/master/bin/vagrant_box_publish.py)
+script
+```shell
+# Interactive mode
+vagrant-box-publish --version-separator - --dry-run
+# Batch mode
+vagrant-box-publish --box-file build/boxes/routeros_6.48.1.box --version-separator - --batch --dry-run
 ```
 
 #### Option 2. Manual build.
