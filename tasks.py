@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import pathlib
+import types
 import itertools
 import distutils.version
 import requests
@@ -123,7 +124,8 @@ def build_plugin(context):
             context.run("vagrant up", pty=True)
 
     with context.cd(vm_dir):
-        context.run("vagrant ssh -- '(source .bash_profile; "
+        context.run(
+            "vagrant ssh -- '(source .bash_profile; "
             "cd /mnt/packer-mikrotik/vagrant-plugins-routeros/; "
             "bundle install; "
             "bundle exec rake build)'"
@@ -263,6 +265,48 @@ def plugin(context, batch=False):
 
     context.routeros.batch = batch
     build_plugin(context)
+
+@invoke.task()
+def outdated(context):  # pylint: disable=unused-argument
+    """Check if currently published box versions are up to date"""
+
+    ros_version_info = [
+        types.SimpleNamespace(
+            branch_name="long-term",
+            version_url="http://upgrade.mikrotik.com/routeros/LATEST.6fix",
+            box_name="cheretbe/routeros-long-term",
+            box_url="https://app.vagrantup.com/api/v1/box/cheretbe/routeros-long-term"
+        ),
+        types.SimpleNamespace(
+            branch_name="stable",
+            version_url="http://upgrade.mikrotik.com/routeros/LATEST.6",
+            box_name="cheretbe/routeros",
+            box_url="https://app.vagrantup.com/api/v1/box/cheretbe/routeros"
+        )
+    ]
+
+    for ros_version in ros_version_info:
+        print(f"Checking RouterOS ({ros_version.branch_name}) version")
+        current_version = distutils.version.LooseVersion(
+            requests.get(ros_version.version_url).text.split(" ")[0]
+        )
+        box_version = (
+            requests.get(ros_version.box_url).json()["current_version"]["version"]
+        )
+        box_os_version = distutils.version.LooseVersion(box_version.split("-")[0])
+
+        if box_os_version == current_version:
+            print(f"Published version {box_version} of '{ros_version.box_name}' is up to date")
+        elif current_version > box_os_version:
+            print(
+                f"[!] '{ros_version.box_name}' box version {box_version} needs "
+                f"an upgrade to version {current_version}"
+            )
+        else:
+            print(
+                f"[!] WARNING: '{ros_version.box_name}' box version {box_version} "
+                f"is greater than currently published version {current_version}"
+            )
 
 invoke.main.program.config.update(
     {
