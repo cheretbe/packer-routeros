@@ -8,7 +8,7 @@ Vagrant.configure("2") do |config|
       "--hostpath", File.expand_path("../..", File.dirname(__FILE__))]
     # prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
     # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
-    vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+    vb.customize ["modifyvm", :id, "--uartmode1", "file", File::NULL]
   end
 
   config.vm.provision "ansible_local" do |ansible|
