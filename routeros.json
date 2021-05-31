@@ -20,7 +20,7 @@
         ["modifyvm", "{{.Name}}", "--usbehci", "off"]
       ],
       "iso_url": "https://download.mikrotik.com/routeros/{{user `ros_ver`}}/mikrotik-{{user `ros_ver`}}.iso",
-      "iso_checksum_type": "none",
+      "iso_checksum": "none",
       "http_directory": ".",
       "boot_command": [
         "<wait5>ainy<wait10><wait10><enter>",
