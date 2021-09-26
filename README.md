@@ -16,6 +16,13 @@ The boxes require `vagrant-routeros` plugin, which is bundled with box file and 
 stable enough to be published on [rubygems.org](https://rubygems.org/), that's why it is bundled. Eventually it shoud be moved to
 a separate repository and published separately.
 
+:warning: ***Important note***: to fix the error *"Unable to resolve dependency: user requested 'vagrant-routeros (= x.x.x)'"* after Vagrant
+update, just remove the plugin with the following command:
+```shell
+vagrant plugin uninstall vagrant-routeros
+```
+The plugin will reinstall itself automatically when needed.
+
 #### Providers
 Currently only `VirtualBox` provider is available.
 
