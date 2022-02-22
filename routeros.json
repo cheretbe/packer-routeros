@@ -29,6 +29,9 @@
         "<enter><wait><wait>",
         "n<wait><wait>",
         "<enter><wait5>",
+        "vagrant<wait><enter>",
+        "vagrant<wait><enter>",
+        "<wait5>",
         "/ip dhcp-client add disabled=no interface=ether1 add-default-route=no use-peer-dns=no use-peer-ntp=no<enter>",
         "<wait5>",
         ":global packerHost \"http://{{ .HTTPIP }}:{{ .HTTPPort }}\"<enter>",
@@ -40,7 +43,7 @@
       "guest_additions_mode": "disable",
       "virtualbox_version_file": "",
       "ssh_username": "admin",
-      "ssh_password": "",
+      "ssh_password": "vagrant",
       "ssh_wait_timeout": "60s",
       "shutdown_command": "execute \"/system shutdown\"",
       "format": "ova"
