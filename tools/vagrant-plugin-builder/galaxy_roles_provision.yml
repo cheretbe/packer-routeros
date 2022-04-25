@@ -1,9 +1,0 @@
----
-- name: Ansible Galaxy roles
-  hosts: all
-
-  tasks:
-    - name: Install roles from Ansible Galaxy
-      command: ansible-galaxy install {{ item }}
-      with_items:
-        - "rvm.ruby"
