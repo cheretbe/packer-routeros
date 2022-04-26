@@ -28,7 +28,7 @@ Currently only `VirtualBox` provider is available.
 
 #### Security
 By default the boxes have no firewall rules configured and come with two user accounts:
-* `admin` with empty(!) password
+* `admin` with `vagrant` password
 * `vagrant` with password `vagrant` and Vagrant insecure private key authentication enabled
 
 :warning: This unsecure setup is intended for use in isolated testing environments. To secure

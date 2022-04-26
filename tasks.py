@@ -83,7 +83,7 @@ def build_routeros(context, routeros_branch):
         f"packer build -var \"ros_ver={ros_version}\" "
         f"-var \"box_file_name={box_file_name}\" "
         "-var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json "
-        f"-on-error={packer_error_action} -force routeros.json",
+        f"-on-error={packer_error_action} -force routeros.pkr.hcl",
         echo=True
     )
 
