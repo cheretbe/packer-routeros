@@ -47,13 +47,18 @@ def get_plugin_file_path():
 
 def build_routeros(context, routeros_branch):
     if routeros_branch == "routeros-long-term":
-        branch_name = "long-term"
+        branch_name = "6 (long-term)"
         version_url = "http://upgrade.mikrotik.com/routeros/LATEST.6fix"
-    else:
-        branch_name = "stable"
+    elif routeros_branch == "routeros":
+        branch_name = "6 (stable)"
         version_url = "http://upgrade.mikrotik.com/routeros/LATEST.6"
+    elif routeros_branch == "routeros7":
+        branch_name = "7 (stable)"
+        version_url = "http://upgrade.mikrotik.com/routeros/NEWEST7.stable"
+    else:
+        sys.exit(f"ERROR: Unknow RouterOS branch code: {routeros_branch}")
 
-    print("Building RouterOS ({})".format(branch_name))
+    print("Building RouterOS {}".format(branch_name))
 
     print("Getting current RouterOS version")
     response = requests.get(version_url)
@@ -141,7 +146,7 @@ def build_plugin(context):
 def remove_test_boxes(context):
     for line in context.run("vagrant box list", hide=True).stdout.splitlines():
         box_name = line.split(" ")[0]
-        if box_name in ("packer_test_routeros", "packer_test_routeros-long-term"):
+        if box_name in ("packer_test_routeros", "packer_test_routeros-long-term", "packer_test_routeros7"):
             context.run(f"vagrant box remove -f {box_name}", pty=True)
 
 
@@ -185,6 +190,13 @@ def register_test_box(context, routeros_branch):
     box_file = str(boxes_dir / box_file)
     context.run(f"vagrant box add packer_test_{routeros_branch} {box_file}", pty=True)
 
+def test_ping(context, vm_name, ping_target):
+    print(f"Pinging {ping_target} from {vm_name}")
+    ping_output = context.run(
+        f"vagrant ssh {vm_name} -- /ping count=3 {ping_target}"
+    ).stdout
+    assert "received=3" in ping_output
+    assert "packet-loss=0%" in ping_output
 
 @invoke.task(default=True)
 def show_help(context):
@@ -211,22 +223,20 @@ def test(context):
     print("Registering test boxes...")
     register_test_box(context, "routeros")
     register_test_box(context, "routeros-long-term")
+    register_test_box(context, "routeros7")
 
     print("Running tests...")
     with context.cd(str(pathlib.Path(script_dir) / "tests" / "vagrant_local")):
         context.run("vagrant up", pty=True)
 
-        ping_output = context.run(
-            "vagrant ssh host1 -- /ping count=3 192.168.199.11"
-        ).stdout
-        assert "received=3" in ping_output
-        assert "packet-loss=0%" in ping_output
+        test_ping(context, "host1", "192.168.199.11")
+        test_ping(context, "host1", "192.168.199.12")
 
-        ping_output = context.run(
-            "vagrant ssh host2 -- /ping count=3 192.168.199.10"
-        ).stdout
-        assert "received=3" in ping_output
-        assert "packet-loss=0%" in ping_output
+        test_ping(context, "host2", "192.168.199.10")
+        test_ping(context, "host2", "192.168.199.12")
+
+        test_ping(context, "host3", "192.168.199.10")
+        test_ping(context, "host3", "192.168.199.11")
 
         context.run("vagrant halt", pty=True)
         context.run("vagrant destroy -f", pty=True)
@@ -243,6 +253,7 @@ def build(context, batch=False):
     build_plugin(context)
     build_routeros(context, routeros_branch="routeros-long-term")
     build_routeros(context, routeros_branch="routeros")
+    build_routeros(context, routeros_branch="routeros7")
     test(context)
 
 @invoke.task(help={"batch": "Batch mode (disables interactive prompts)"})
@@ -260,6 +271,13 @@ def routeros(context, batch=False):
     build_routeros(context, routeros_branch="routeros")
 
 @invoke.task(help={"batch": "Batch mode (disables interactive prompts)"})
+def routeros7(context, batch=False):
+    """Build RouterOS 7 (stable)"""
+
+    context.routeros.batch = batch
+    build_routeros(context, routeros_branch="routeros7")
+
+@invoke.task(help={"batch": "Batch mode (disables interactive prompts)"})
 def plugin(context, batch=False):
     """Build 'vagrant-routeros' plugin"""
 
@@ -272,21 +290,27 @@ def outdated(context):  # pylint: disable=unused-argument
 
     ros_version_info = [
         types.SimpleNamespace(
-            branch_name="long-term",
+            branch_name="6 (long-term)",
             version_url="http://upgrade.mikrotik.com/routeros/LATEST.6fix",
             box_name="cheretbe/routeros-long-term",
             box_url="https://app.vagrantup.com/api/v1/box/cheretbe/routeros-long-term"
         ),
         types.SimpleNamespace(
-            branch_name="stable",
+            branch_name="6 (stable)",
             version_url="http://upgrade.mikrotik.com/routeros/LATEST.6",
             box_name="cheretbe/routeros",
             box_url="https://app.vagrantup.com/api/v1/box/cheretbe/routeros"
+        ),
+        types.SimpleNamespace(
+            branch_name="7 (stable)",
+            version_url="http://upgrade.mikrotik.com/routeros/NEWEST7.stable",
+            box_name="cheretbe/routeros7",
+            box_url="https://app.vagrantup.com/api/v1/box/cheretbe/routeros7"
         )
     ]
 
     for ros_version in ros_version_info:
-        print(f"Checking RouterOS ({ros_version.branch_name}) version")
+        print(f"Checking RouterOS {ros_version.branch_name} version")
         current_version = distutils.version.LooseVersion(
             requests.get(ros_version.version_url).text.split(" ")[0]
         )

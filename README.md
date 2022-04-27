@@ -5,8 +5,9 @@
 * https://www.virtualbox.org/
 
 #### Box URLs
-* Long-term branch: https://app.vagrantup.com/cheretbe/boxes/routeros-long-term
-* Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros
+* Version 6 Long-term branch: https://app.vagrantup.com/cheretbe/boxes/routeros-long-term
+* Version 6 Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros
+* Version 7 Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros7
 
 #### Status
 :warning:`beta` - The boxes are fully functional, but this project is work-in-progress: breaking changes may be introduced at any time.
@@ -45,6 +46,8 @@ References:
 vagrant init cheretbe/routeros
 # or
 vagrant init cheretbe/routeros-long-term
+# or
+vagrant init cheretbe/routeros7
 
 vagrant up
 ```
@@ -99,9 +102,9 @@ If you need Internet access in the VM you can configure `host_nat` adapter using
 ------
 Currently guest capability "Configure networks" is not implemented. Therefore you can't configure static IP or DHCP for
 additional network interfaces like this:
-```ruby
-config.vm.network "private_network", type: "dhcp", virtualbox__intnet: "vagrant-intnet-1"
-config.vm.network "private_network", ip: "172.24.0.1", virtualbox__intnet: "vagrant-intnet-2"
+```diff
+- (won't work) config.vm.network "private_network", type: "dhcp", virtualbox__intnet: "vagrant-intnet-1"
+- (won't work) config.vm.network "private_network", ip: "172.24.0.1", virtualbox__intnet: "vagrant-intnet-2"
 ```
 Instead you need to disable auto-config in Vagrantfile:
 ```ruby
@@ -171,10 +174,12 @@ cd ../..
 
 2. Get current RouterOS version
 ```shell
-# Stable branch
+# Version 6 stable branch
 ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6 | cut -d' ' -f1)
-# long-term branch
+# Version 6 long-term branch
 ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6fix | cut -d' ' -f1)
+# Version 7 stable branch
+ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/NEWEST7.stable | cut -d' ' -f1)
 
 echo ${ros_version}
 ```
@@ -201,7 +206,9 @@ vagrant box add -f mt-test ./build/boxes/routeros.box
 
 ```ruby
 Vagrant.configure("2") do |config|
-  config.vm.box = "cheretbe/routeros"
+  config.vm.box = "cheretbe/routeros7"
+  # config.vm.box = "cheretbe/routeros"
+  # config.vm.box = "cheretbe/routeros-long-term"
   # config.vm.box = "mt-test"
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]

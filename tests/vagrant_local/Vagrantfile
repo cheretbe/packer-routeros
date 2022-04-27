@@ -21,4 +21,15 @@ Vagrant.configure("2") do |config|
       command: "/import host2_provision.rsc", check_script_error: true
   end
 
+  config.vm.define :host3 do |host3|
+    host3.vm.box = "packer_test_routeros7"
+    host3.vm.hostname = "host3"
+    host3.vm.network "private_network", virtualbox__intnet: "packer-test-lan", auto_config: false
+
+    host3.vm.provision "routeros_file", name: "Upload provision script",
+      source: "provision/host3_provision.rsc", destination: "host3_provision.rsc"
+    host3.vm.provision "routeros_command", name: "Run provision script",
+      command: "/import host3_provision.rsc", check_script_error: true
+  end
+
 end

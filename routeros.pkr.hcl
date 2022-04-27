@@ -17,6 +17,9 @@ variable "vagrant_routeros_plugin_version" {
 locals {
   ver_major = split(".", var.ros_ver)[0]
   ver_minor = split(".", var.ros_ver)[1]
+  # 6.x: a - select all, i - install, n - do you want to keep old conf, y - disk erasure warning
+  # 7.x: a - select all, i - install, y - disk erasure warning
+  install_seq = local.ver_major >= 7 ? "a<wait>i<wait>y" : "a<wait>i<wait>n<wait>y"
   old_login_seq = "/user set [/user find name=\"admin\"] password=\"vagrant\"<enter>"
   v6_49_plus_login_seq = "vagrant<enter><wait><wait>vagrant<enter>"
   login_seq = local.ver_major >= 7 || (local.ver_major >= 6 && local.ver_minor >= 49) ? local.v6_49_plus_login_seq : local.old_login_seq
@@ -24,7 +27,9 @@ locals {
 
 source "virtualbox-iso" "routeros" {
   boot_command            = [
-    "<wait5>ainy<wait10><wait10><enter>",
+    "<wait5>",
+    local.install_seq,
+    "<wait10><wait10><enter>",
     "<wait10><wait10><wait10>",
     "admin<enter><wait><wait>",
     "<enter><wait><wait>",
