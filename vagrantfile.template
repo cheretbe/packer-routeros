@@ -31,9 +31,10 @@ Vagrant.configure(2) do |config|
   config.vm.provider "virtualbox" do |vb|
     vb.check_guest_additions = false
   end
-
-  # config.vm.provision "routeros", name: "MAC addresses init",
-  #   inline: "/import vagrant_provision_mac_addr.rsc"
+  # Temporary fix for "sign_and_send_pubkey: no mutual signature supported" error
+  # Recent versions of ssh clients deprecate SHA-1 logins due to security risks
+  # https://forum.mikrotik.com/viewtopic.php?p=882513
+  config.ssh.extra_args = ["-oPubkeyAcceptedAlgorithms=+ssh-rsa"]
 
   config.vm.provision "routeros_command", name: "Initial provision",
     command: "/import vagrant_provision.rsc"
