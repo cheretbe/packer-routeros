@@ -57,6 +57,8 @@ source "virtualbox-iso" "routeros" {
   ssh_wait_timeout        = "60s"
   vboxmanage              = [
     ["modifyvm", "{{ .Name }}", "--memory", "128"],
+    ["modifyvm", "{{ .Name }}", "--graphicscontroller", "vmsvga"],
+    ["modifyvm", "{{ .Name }}", "--vram", "128"],
     ["modifyvm", "{{ .Name }}", "--acpi", "on"],
     ["modifyvm", "{{ .Name }}", "--ioapic", "on"],
     ["modifyvm", "{{ .Name }}", "--hpet", "on"],
