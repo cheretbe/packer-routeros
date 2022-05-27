@@ -1,3 +1,7 @@
+[![](https://badgen.net/https/cheretbe.npkn.net/vagrant-ros-version/routeros-long-term)](https://app.vagrantup.com/cheretbe/boxes/routeros-long-term)
+[![](https://badgen.net/https/cheretbe.npkn.net/vagrant-ros-version/routeros)](https://app.vagrantup.com/cheretbe/boxes/routeros)
+[![](https://badgen.net/https/cheretbe.npkn.net/vagrant-ros-version/routeros7)](https://app.vagrantup.com/cheretbe/boxes/routeros7)
+
 # Mikrotik RouterOS boxes for Vagrant
 * https://mikrotik.com
 * https://www.vagrantup.com/
