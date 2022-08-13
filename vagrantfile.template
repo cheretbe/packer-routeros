@@ -31,10 +31,22 @@ Vagrant.configure(2) do |config|
   config.vm.provider "virtualbox" do |vb|
     vb.check_guest_additions = false
   end
+
   # Temporary fix for "sign_and_send_pubkey: no mutual signature supported" error
   # Recent versions of ssh clients deprecate SHA-1 logins due to security risks
   # https://forum.mikrotik.com/viewtopic.php?p=882513
-  config.ssh.extra_args = ["-oPubkeyAcceptedAlgorithms=+ssh-rsa"]
+  # We check OpenSSH client version before using PubkeyAcceptedAlgorithms option though
+  # because earlier versions don't support it and throw an error
+  begin
+    # We expect output like this
+    # OpenSSH_8.8p1, OpenSSL 1.1.1l  24 Aug 2021
+    ssh_version = Gem::Version.new(`ssh -V 2>&1`.sub(/^OpenSSH_([\d.p]+)[, ].*/m, '\1').split('p')[0])
+  rescue
+    ssh_version = Gem::Version.new("0.0")
+  end
+  if ssh_version >= Gem::Version.new("8.8")
+    config.ssh.extra_args = ["-oPubkeyAcceptedAlgorithms=+ssh-rsa"]
+  end
 
   config.vm.provision "routeros_command", name: "Initial provision",
     command: "/import vagrant_provision.rsc"
