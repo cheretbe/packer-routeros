@@ -1,5 +1,6 @@
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/bionic64"
+
   config.vm.provider "virtualbox" do |vb|
     vb.memory = "2048"
     vb.cpus = "2"
@@ -9,6 +10,17 @@ Vagrant.configure("2") do |config|
     # prevent 'ubuntu-xenial-16.04-cloudimg-console.log' file creation
     # https://groups.google.com/forum/#!topic/vagrant-up/eZljy-bddoI
     vb.customize ["modifyvm", :id, "--uartmode1", "file", File::NULL]
+  end
+
+  config.vm.provider "libvirt" do |lv, override|
+    override.vm.box = "generic/ubuntu2204" # 1804 does not have virtiofs support.
+    lv.qemu_use_session = false # required for virtiofs.
+    lv.memory = 2 * 1024
+    lv.cpus = 2
+    lv.memorybacking :source, :type => 'memfd'  # required for virtiofs.
+    lv.memorybacking :access, :mode => 'shared' # required for virtiofs.
+    override.vm.synced_folder File.expand_path("../..", File.dirname(__FILE__)), "/mnt/packer-mikrotik", type: "virtiofs"
+    override.vm.synced_folder ".", "/vagrant", type: "virtiofs"
   end
 
   config.vm.provision "ansible_local" do |ansible|

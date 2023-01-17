@@ -1,5 +1,5 @@
 ---
-- name: Ruby development environmenth
+- name: Ruby development environment
   hosts: all
   tasks:
 
@@ -27,6 +27,7 @@
       name: vagrant
       groups: vboxsf
       append: yes
+    when: ansible_facts["virtualization_type"] == "virtualbox"
 
   - name: Mount shared folder
     become: yes
@@ -36,6 +37,7 @@
       fstype: vboxsf
       opts: rw,exec,uid=vagrant,gid=vboxsf,dmode=775,fmode=664
       state: mounted
+    when: ansible_facts["virtualization_type"] == "virtualbox"
 
   - name: Install Ruby snap
     # community.general.snap:
