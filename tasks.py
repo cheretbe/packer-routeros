@@ -39,7 +39,7 @@ def get_plugin_file_path():
         plugin_version = json.load(ver_f)["vagrant_routeros_plugin_version"]
     return os.path.join(
         script_dir,
-        "vagrant-plugins-routeros/pkg/vagrant-routeros-{}.gem".format(plugin_version),
+        f"vagrant-plugins-routeros/pkg/vagrant-routeros-{plugin_version}.gem",
     )
 
 
@@ -56,9 +56,9 @@ def build_routeros(context, routeros_branch):
     else:
         sys.exit(f"ERROR: Unknow RouterOS branch code: {routeros_branch}")
 
-    print("Building RouterOS {}".format(branch_name))
+    print(f"Building RouterOS {branch_name}")
 
-    print("Getting current RouterOS version")
+    print("Getting current RouterOS version: ", end="")
     response = requests.get(version_url)
     ros_version = response.text.split(" ")[0]
     print(ros_version)
@@ -73,9 +73,9 @@ def build_routeros(context, routeros_branch):
             "Use 'inv plugin' to build it"
         )
 
-    box_file_name = "build/boxes/{}_{}.box".format(routeros_branch, ros_version)
+    box_file_name = f"build/boxes/{routeros_branch}_{ros_version}.box"
     if os.path.isfile(box_file_name):
-        print("'{}' has alredy been built".format(box_file_name))
+        print(f"'{box_file_name}' has alredy been built")
         ask_for_confirmation("Do you want to rebuild it?", context.routeros.batch, True)
 
     packer_error_action = "cleanup" if context.routeros.batch else "ask"

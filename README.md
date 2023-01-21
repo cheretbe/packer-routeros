@@ -166,7 +166,7 @@ vagrant-box-publish --box-file build/boxes/routeros_6.48.1.box --version-separat
 cd tools/vagrant-plugin-builder
 vagrant up && vagrant ssh
 cd /mnt/packer-mikrotik/vagrant-plugins-routeros/
-bundle install && bundle exec rake build
+sudo BUNDLE_SILENCE_ROOT_WARNING=true bundle install && bundle exec rake build
 logout
 cd ../..
 ```
