@@ -13,7 +13,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provider "libvirt" do |lv, override|
-    override.vm.box = "generic/ubuntu2204" # 1804 does not have virtiofs support.
+    override.vm.box = "generic/fedora35" # Fedora stopped supporting Ruby 2.7 after version 35.
     lv.qemu_use_session = false # required for virtiofs.
     lv.memory = 2 * 1024
     lv.cpus = 2

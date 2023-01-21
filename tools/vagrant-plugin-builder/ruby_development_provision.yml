@@ -12,6 +12,7 @@
     retries: 20
     delay: 10
     become: true
+    when: ansible_facts["os_family"] == "Debian"
 
   - name: Install apt packages
     apt:
@@ -19,10 +20,11 @@
       update_cache: yes
       # 1 hour
       cache_valid_time: 3600
-    become: yes
+    become: true
+    when: ansible_facts["os_family"] == "Debian"
 
   - name: Add user 'vagrant' to group 'vboxsf'
-    become: yes
+    become: true
     user:
       name: vagrant
       groups: vboxsf
@@ -30,7 +32,7 @@
     when: ansible_facts["virtualization_type"] == "virtualbox"
 
   - name: Mount shared folder
-    become: yes
+    become: true
     mount:
       path: /mnt/packer-mikrotik
       src: packer-mikrotik
@@ -39,14 +41,24 @@
       state: mounted
     when: ansible_facts["virtualization_type"] == "virtualbox"
 
+  - name: Ensure Ruby 2.7 build enviromment is present
+    become: true
+    ansible.builtin.dnf:
+      name: "{{ item }}"
+    loop:
+      - "@ruby:2.7"
+      - ruby-devel
+    when: ansible_facts["os_family"] == "RedHat"
+
   - name: Install Ruby snap
+    become: true
     # community.general.snap:
     # (fails since we are using ansible_local provisioner and it installs old Ansible version)
     snap:
       name: ruby
       channel: 2.7/stable # otherwise 3.1.2 is installed and vagrant 2.2.20.dev depends on (>= 2.6, < 3.1)
       classic: yes
-    become: yes
+    when: ansible_facts["os_family"] == "Debian"
 
     # Not installing since rvm.ruby fails
     # - name: Install roles from Ansible Galaxy
