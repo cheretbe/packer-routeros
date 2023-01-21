@@ -142,17 +142,12 @@ is used internally during provision, but you can use `vmNICMACs` to reference in
 #### Option 1. Use [pyinvoke](http://www.pyinvoke.org/) script.
 
 ```shell
-inv build
-# Batch mode, no prompts
-inv build --batch
-```
-
-The script needs Python3 installed and uses additional packages. They can be
-installed using pip (setting up a virtual environment is strongly recommended -
-see `Step 2` [here](https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-programming-environment-on-an-ubuntu-16-04-server)
-for details)
-```shell
+virtualenv venv
+source venv/bin/activate
 pip3 install -r requirements.txt
+inv build
+# inv build --batch # Or: batch mode, no prompts
+deactivate
 ```
 
 Go to https://www.vagrantup.com/ and manually publish `build/boxes/routeros*.box` files or
