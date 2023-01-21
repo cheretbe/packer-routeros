@@ -9,7 +9,6 @@ import types
 
 import invoke
 import invoke.program
-import PyInquirer
 import requests
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -25,11 +24,8 @@ def ask_for_confirmation(prompt, batch_mode, default):
         )
         confirmed = default
     else:
-        conf_questions = [
-            {"type": "confirm", "name": "continue", "message": prompt, "default": True}
-        ]
-        conf_answers = PyInquirer.prompt(conf_questions)
-        confirmed = bool(conf_answers) and conf_answers["continue"]
+        answer = input(f"{prompt} (y/n): ")
+        confirmed = answer == "y"
     if not confirmed:
         sys.exit("Cancelled by user")
 
@@ -130,7 +126,7 @@ def build_plugin(context):
         context.run(
             "vagrant ssh -- '(source .bash_profile; "
             "cd /mnt/packer-mikrotik/vagrant-plugins-routeros/; "
-            "bundle install; "
+            "sudo BUNDLE_SILENCE_ROOT_WARNING=true bundle install; "
             "bundle exec rake build)'"
         )
 
