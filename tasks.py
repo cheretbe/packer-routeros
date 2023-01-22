@@ -9,6 +9,7 @@ import types
 
 import invoke
 import invoke.program
+import jinja2
 import requests
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -43,27 +44,10 @@ def get_plugin_file_path():
     )
 
 
-def build_routeros(context, routeros_branch):
-    if routeros_branch == "routeros-long-term":
-        branch_name = "6 (long-term)"
-        version_url = "http://upgrade.mikrotik.com/routeros/LATEST.6fix"
-    elif routeros_branch == "routeros":
-        branch_name = "6 (stable)"
-        version_url = "http://upgrade.mikrotik.com/routeros/LATEST.6"
-    elif routeros_branch == "routeros7":
-        branch_name = "7 (stable)"
-        version_url = "http://upgrade.mikrotik.com/routeros/NEWEST7.stable"
-    else:
-        sys.exit(f"ERROR: Unknow RouterOS branch code: {routeros_branch}")
-
-    print(f"Building RouterOS {branch_name}")
-
-    print("Getting current RouterOS version: ", end="")
-    response = requests.get(version_url)
-    ros_version = response.text.split(" ")[0]
-    print(ros_version)
-    ask_for_confirmation(
-        "Do you want to continue with building?", context.routeros.batch, True
+def build_routeros(context, routeros_branch="*"):
+    print(f"Building RouterOS branch: {routeros_branch}")
+    branch_filter = (
+        routeros_branch if (routeros_branch == "*") else f"{routeros_branch}.*"
     )
 
     plugin_file_path = get_plugin_file_path()
@@ -73,28 +57,15 @@ def build_routeros(context, routeros_branch):
             "Use 'inv plugin' to build it"
         )
 
-    box_file_name = f"build/boxes/{routeros_branch}_{ros_version}.box"
-    if os.path.isfile(box_file_name):
-        print(f"'{box_file_name}' has alredy been built")
-        ask_for_confirmation("Do you want to rebuild it?", context.routeros.batch, True)
-
     packer_error_action = "cleanup" if context.routeros.batch else "ask"
-    print("Building the box...")
     context.run(
-        f'packer build -var "ros_ver={ros_version}" '
-        f'-var "box_file_name={box_file_name}" '
-        "-var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json "
-        f"-on-error={packer_error_action} -force routeros.pkr.hcl",
+        f"packer build"
+        " -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json"
+        f' -var "box_path=build/boxes"'
+        f' -only="{branch_filter}"'
+        f" -on-error={packer_error_action} -force routeros.pkr.hcl",
         echo=True,
     )
-
-    description_md = pathlib.Path(box_file_name).with_suffix(".md")
-    print(f"Writing '{description_md}'")
-    with open(description_md, "w") as desc_f:
-        desc_f.write(
-            f"**Updated ROS to version {ros_version}**<br>"
-            "https://github.com/cheretbe/packer-routeros/blob/master/README.md"
-        )
 
 
 def build_plugin(context):
@@ -138,17 +109,6 @@ def build_plugin(context):
             context.run("vagrant halt")
 
 
-def remove_test_boxes(context):
-    for line in context.run("vagrant box list", hide=True).stdout.splitlines():
-        box_name = line.split(" ")[0]
-        if box_name in (
-            "packer_test_routeros",
-            "packer_test_routeros-long-term",
-            "packer_test_routeros7",
-        ):
-            context.run(f"vagrant box remove -f {box_name}", pty=True)
-
-
 def do_cleanup(context):
     print("Cleaning up...")
 
@@ -172,10 +132,25 @@ def do_cleanup(context):
             f_2del.unlink()
 
 
+def build_template(context, output_filename):
+    print("Building Packer HCL2 template")
+    with open(f"{output_filename}.j2", "r") as file:
+        j2 = file.read()
+    template = jinja2.Template(j2)
+    hcl2 = template.render(
+        {
+            "versions": [branch["version"] for branch in context.routeros.branches],
+            "branches": context.routeros.branches,
+        }
+    )
+    with open(output_filename, "w") as file:
+        file.write(hcl2)
+
+
 def register_test_box(context, routeros_branch):
     boxes_dir = pathlib.Path(script_dir) / "build" / "boxes"
     box_versions = [
-        item.stem.split("_")[1] for item in boxes_dir.glob(f"{routeros_branch}_*.box")
+        item.stem.split("_")[2] for item in boxes_dir.glob(f"{routeros_branch}_*.box")
     ]
     if len(box_versions) == 0:
         sys.exit(
@@ -183,12 +158,22 @@ def register_test_box(context, routeros_branch):
             f"_*.box'. Use 'inv {routeros_branch}' to build a box"
         )
     box_file = (
-        f"{routeros_branch}_"
+        f"{routeros_branch}_*_"
         + max(box_versions, key=distutils.version.LooseVersion)
         + ".box"
     )
     box_file = str(boxes_dir / box_file)
     context.run(f"vagrant box add packer_test_{routeros_branch} {box_file}", pty=True)
+
+
+def remove_test_boxes(context):
+    packer_test_boxes = [
+        f"packer_test_{branch['name']}" for branch in context.routeros.branches
+    ]
+    for line in context.run("vagrant box list", hide=True).stdout.splitlines():
+        box_name = line.split(" ")[0]
+        if box_name in packer_test_boxes:
+            context.run(f"vagrant box remove -f {box_name}", pty=True)
 
 
 def test_ping(context, vm_name, ping_target):
@@ -203,6 +188,7 @@ def test_ping(context, vm_name, ping_target):
 @invoke.task(default=True)
 def show_help(context):
     """This help message"""
+
     context.run("invoke --list")
     print("Use --help parameter to view task's options")
     print("Examples:")
@@ -214,20 +200,21 @@ def show_help(context):
 
 @invoke.task()
 def cleanup(context):
-    """Delete build artefacts and temporary files"""
+    """Delete build artifacts and temporary files"""
+
     do_cleanup(context)
 
 
 @invoke.task()
 def test(context):
     """Register temporary vagrant boxes and run some tests against them"""
+
     print("Removing existing test boxes...")
     remove_test_boxes(context)
 
     print("Registering test boxes...")
-    register_test_box(context, "routeros")
-    register_test_box(context, "routeros-long-term")
-    register_test_box(context, "routeros7")
+    for branch in context.routeros.branches:
+        register_test_box(context, branch["name"])
 
     print("Running tests...")
     with context.cd(str(pathlib.Path(script_dir) / "tests" / "vagrant_local")):
@@ -249,20 +236,29 @@ def test(context):
     remove_test_boxes(context)
 
 
-@invoke.task(help={"batch": "Batch mode (disables interactive prompts)"})
+@invoke.task()
+def template(context):
+    """Generate the Packer HCL2 template"""
+
+    build_template(context, "routeros.pkr.hcl")
+
+
+@invoke.task(
+    pre=[template], help={"batch": "Batch mode (disables interactive prompts)"}
+)
 def build(context, batch=False):
     """Build all"""
 
     context.routeros.batch = batch
     do_cleanup(context)
     build_plugin(context)
-    build_routeros(context, routeros_branch="routeros-long-term")
-    build_routeros(context, routeros_branch="routeros")
-    build_routeros(context, routeros_branch="routeros7")
+    build_routeros(context)
     test(context)
 
 
-@invoke.task(help={"batch": "Batch mode (disables interactive prompts)"})
+@invoke.task(
+    pre=[template], help={"batch": "Batch mode (disables interactive prompts)"}
+)
 def routeros_long_term(context, batch=False):
     """Build RouterOS (long-term)"""
 
@@ -270,7 +266,9 @@ def routeros_long_term(context, batch=False):
     build_routeros(context, routeros_branch="routeros-long-term")
 
 
-@invoke.task(help={"batch": "Batch mode (disables interactive prompts)"})
+@invoke.task(
+    pre=[template], help={"batch": "Batch mode (disables interactive prompts)"}
+)
 def routeros(context, batch=False):
     """Build RouterOS (stable)"""
 
@@ -278,7 +276,9 @@ def routeros(context, batch=False):
     build_routeros(context, routeros_branch="routeros")
 
 
-@invoke.task(help={"batch": "Batch mode (disables interactive prompts)"})
+@invoke.task(
+    pre=[template], help={"batch": "Batch mode (disables interactive prompts)"}
+)
 def routeros7(context, batch=False):
     """Build RouterOS 7 (stable)"""
 
@@ -298,32 +298,19 @@ def plugin(context, batch=False):
 def outdated(context):  # pylint: disable=unused-argument
     """Check if currently published box versions are up to date"""
 
-    ros_version_info = [
-        types.SimpleNamespace(
-            branch_name="6 (long-term)",
-            version_url="http://upgrade.mikrotik.com/routeros/LATEST.6fix",
-            box_name="cheretbe/routeros-long-term",
-            box_url="https://app.vagrantup.com/api/v1/box/cheretbe/routeros-long-term",
-        ),
-        types.SimpleNamespace(
-            branch_name="6 (stable)",
-            version_url="http://upgrade.mikrotik.com/routeros/LATEST.6",
-            box_name="cheretbe/routeros",
-            box_url="https://app.vagrantup.com/api/v1/box/cheretbe/routeros",
-        ),
-        types.SimpleNamespace(
-            branch_name="7 (stable)",
-            version_url="http://upgrade.mikrotik.com/routeros/NEWEST7.stable",
-            box_name="cheretbe/routeros7",
-            box_url="https://app.vagrantup.com/api/v1/box/cheretbe/routeros7",
-        ),
-    ]
-
+    ros_version_info = []
+    for branch in context.routeros.branches:
+        ros_version_info.append(
+            types.SimpleNamespace(
+                branch_name=branch["name"],
+                version=branch["version"],
+                box_name=f"cheretbe/{branch['name']}",
+                box_url=f"https://app.vagrantup.com/api/v1/box/cheretbe/{branch['name']}",
+            )
+        )
     for ros_version in ros_version_info:
         print(f"Checking RouterOS {ros_version.branch_name} version")
-        current_version = distutils.version.LooseVersion(
-            requests.get(ros_version.version_url).text.split(" ")[0]
-        )
+        current_version = distutils.version.LooseVersion(ros_version.version)
         box_version = requests.get(ros_version.box_url).json()["current_version"][
             "version"
         ]
@@ -345,4 +332,30 @@ def outdated(context):  # pylint: disable=unused-argument
             )
 
 
-invoke.main.program.config.update({"routeros": {"batch": False}})
+def get_branches():
+    branches = [
+        {
+            "name": "routeros-long-term",
+            "url": "http://upgrade.mikrotik.com/routeros/LATEST.6fix",
+            "description": "6 (long-term)",
+        },
+        {
+            "name": "routeros",
+            "url": "http://upgrade.mikrotik.com/routeros/LATEST.6",
+            "description": "6 (stable)",
+        },
+        {
+            "name": "routeros7",
+            "url": "http://upgrade.mikrotik.com/routeros/NEWEST7.stable",
+            "description": "7 (stable)",
+        },
+    ]
+    for branch in branches:
+        response = requests.get(branch["url"])
+        branch["version"] = response.text.split(" ")[0]
+    return branches
+
+
+invoke.main.program.config.update(
+    {"routeros": {"batch": False, "branches": get_branches()}}
+)
