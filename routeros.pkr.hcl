@@ -75,7 +75,7 @@ source "virtualbox-iso" "routeros" {
     ["modifyvm", "{{ .Name }}", "--usbehci", "off"]
   ]
   virtualbox_version_file = ""
-  vm_name                 = "routeros"
+  vm_name                 = "routeros-${var.ros_ver}"
 }
 
 source "qemu" "routeros" {
@@ -89,7 +89,7 @@ source "qemu" "routeros" {
   ssh_password            = "vagrant"
   ssh_username            = "admin"
   ssh_timeout             = "60s"
-  vm_name                 = "routeros"
+  vm_name                 = "routeros-${var.ros_ver}"
   net_device              = "e1000"
   disk_interface          = "ide"
   boot_wait               = "10s"
@@ -120,7 +120,7 @@ build {
   sources = [format("source.%s.routeros", local.source_provider)]
 
   post-processor "vagrant" {
-    keep_input_artifact  = false
+    keep_input_artifact  = true  # Required for concurrent packer operation.
     compression_level    = 9
     include              = [
       "vagrant-plugins-routeros/pkg/vagrant-routeros-${var.vagrant_routeros_plugin_version}.gem",

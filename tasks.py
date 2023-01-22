@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
+import concurrent.futures
 import distutils.version
 import itertools
 import json
@@ -43,7 +44,7 @@ def get_plugin_file_path():
     )
 
 
-def build_routeros(context, routeros_branch):
+def build_routeros(context, routeros_branch) -> bool:
     if routeros_branch == "routeros-long-term":
         branch_name = "6 (long-term)"
         version_url = "http://upgrade.mikrotik.com/routeros/LATEST.6fix"
@@ -95,6 +96,8 @@ def build_routeros(context, routeros_branch):
             f"**Updated ROS to version {ros_version}**<br>"
             "https://github.com/cheretbe/packer-routeros/blob/master/README.md"
         )
+
+    return True
 
 
 def build_plugin(context):
@@ -256,9 +259,28 @@ def build(context, batch=False):
     context.routeros.batch = batch
     do_cleanup(context)
     build_plugin(context)
-    build_routeros(context, routeros_branch="routeros-long-term")
-    build_routeros(context, routeros_branch="routeros")
-    build_routeros(context, routeros_branch="routeros7")
+    branches = ["routeros-long-term", "routeros", "routeros7"]
+    if batch:
+        build_error = False
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=len(branches)
+        ) as executor:
+            future_to_branch = {
+                executor.submit(build_routeros, context, branch): branch
+                for branch in branches
+            }
+            for future in concurrent.futures.as_completed(future_to_branch):
+                branch = future_to_branch[future]
+                try:
+                    if not future.result():
+                        build_error = True
+                except Exception:
+                    build_error = True
+        if build_error:
+            sys.exit("At least one build branch had an error, terminating.")
+    else:
+        for branch in branches:
+            build_routeros(context, routeros_branch=branch)
     test(context)
 
 

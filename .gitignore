@@ -1,3 +1,4 @@
 /build
 /packer_cache
 /venv
+/output-routeros/routeros*
