@@ -1,3 +1,7 @@
 invoke
 requests
 jinja2
+
+# For formatting only
+black
+isort

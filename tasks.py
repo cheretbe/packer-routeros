@@ -1,34 +1,17 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
 import distutils.version
-import itertools
 import json
 import os
 import pathlib
+import shutil
 import sys
 import types
 
-import invoke
 import invoke.program
 import jinja2
 import requests
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
-
-
-def ask_for_confirmation(prompt, batch_mode, default):
-    if batch_mode:
-        print(prompt)
-        print(
-            "Batch mode is on. Autoselecting default option ({})".format(
-                {True: "yes", False: "no"}[default]
-            )
-        )
-        confirmed = default
-    else:
-        answer = input(f"{prompt} (y/n): ")
-        confirmed = answer == "y"
-    if not confirmed:
-        sys.exit("Cancelled by user")
 
 
 def get_plugin_file_path():
@@ -57,56 +40,22 @@ def build_routeros(context, routeros_branch="*"):
             "Use 'inv plugin' to build it"
         )
 
-    packer_error_action = "cleanup" if context.routeros.batch else "ask"
     context.run(
         f"packer build"
         " -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json"
         f' -var "box_path=build/boxes"'
         f' -only="{branch_filter}"'
-        f" -on-error={packer_error_action} -force routeros.pkr.hcl",
+        f" -on-error=abort -force routeros.pkr.hcl",
         echo=True,
     )
 
 
 def build_plugin(context):
     print("Building 'vagrant-routeros' plugin...")
-    vm_dir = os.path.join(script_dir, "tools/vagrant-plugin-builder")
-    print(f"Using helper VM in '{vm_dir}'")
-    current_vm_state = ""
-    with context.cd(vm_dir):
-        run_result = context.run(command="vagrant status --machine-readable", hide=True)
-    for line in run_result.stdout.splitlines():
-        values = line.split(",")
-        if len(values) > 3:
-            if values[1] == "default" and values[2] == "state":
-                current_vm_state = values[3]
-    vm_needs_creation = current_vm_state == "not_created"
-    vm_needs_start = current_vm_state != "running"
-    vm_needs_halt = current_vm_state == "poweroff"
-
-    if vm_needs_creation:
-        print("The VM in 'tools/vagrant-plugin-builder' is not created")
-        print("This script will create the VM and destroy if after the build")
-        ask_for_confirmation("Continue?", context.routeros.batch, True)
-
-    if vm_needs_start:
-        with context.cd(vm_dir):
-            context.run("vagrant up", pty=True)
-
-    with context.cd(vm_dir):
+    with context.cd(os.path.join(script_dir, "vagrant-plugins-routeros")):
         context.run(
-            "vagrant ssh -- '(source .bash_profile; "
-            "cd /mnt/packer-mikrotik/vagrant-plugins-routeros/; "
-            "sudo BUNDLE_SILENCE_ROOT_WARNING=true bundle install; "
-            "bundle exec rake build)'"
+            "bundle config --local path bundle && bundle install && bundle exec rake build"
         )
-
-    if vm_needs_creation:
-        with context.cd(vm_dir):
-            context.run("vagrant destroy -f")
-    elif vm_needs_halt:
-        with context.cd(vm_dir):
-            context.run("vagrant halt")
 
 
 def do_cleanup(context):
@@ -114,30 +63,29 @@ def do_cleanup(context):
 
     remove_test_boxes(context)
 
-    files_2del = (pathlib.Path(script_dir) / "build" / "boxes").glob("*.box")
-    files_2del = itertools.chain(
-        files_2del, (pathlib.Path(script_dir) / "build" / "boxes").glob("*.md")
-    )
-    files_2del = itertools.chain(
-        files_2del,
-        (pathlib.Path(script_dir) / "vagrant-plugins-routeros" / "pkg").glob("*.gem"),
-    )
-    files_2del = itertools.chain(
-        files_2del, (pathlib.Path(script_dir) / "packer_cache").rglob("*")
-    )
+    for directory in [
+        pathlib.Path(script_dir) / "build",
+        pathlib.Path(script_dir) / "vagrant-plugins-routeros" / ".bundle",
+        pathlib.Path(script_dir) / "vagrant-plugins-routeros" / "bundle",
+        pathlib.Path(script_dir) / "vagrant-plugins-routeros" / "pkg",
+    ]:
+        if directory.is_dir():
+            print(f"  Deleting {directory}")
+            shutil.rmtree(directory)
 
-    for f_2del in files_2del:
-        if f_2del.is_file():
-            print(f"  Deleting {f_2del}")
-            f_2del.unlink()
+    for file in [
+        pathlib.Path(script_dir) / "vagrant-plugins-routeros" / "Gemfile.lock"
+    ]:
+        if file.is_file():
+            print(f"  Deleting {file}")
+            file.unlink()
 
 
 def build_template(context, output_filename):
     print("Building Packer HCL2 template")
     with open(f"{output_filename}.j2", "r") as file:
         j2 = file.read()
-    template = jinja2.Template(j2)
-    hcl2 = template.render(
+    hcl2 = jinja2.Template(j2).render(
         {
             "versions": [branch["version"] for branch in context.routeros.branches],
             "branches": context.routeros.branches,
@@ -190,12 +138,10 @@ def show_help(context):
     """This help message"""
 
     context.run("invoke --list")
-    print("Use --help parameter to view task's options")
     print("Examples:")
-    print("  inv build --help")
-    print("  inv build --batch")
-    print("  inv routeros")
-    print("  inv plugin --batch")
+    print("  inv plugin")
+    print("  inv build")
+    print("  inv routeros-long-term")
 
 
 @invoke.task()
@@ -243,54 +189,41 @@ def template(context):
     build_template(context, "routeros.pkr.hcl")
 
 
-@invoke.task(
-    pre=[template], help={"batch": "Batch mode (disables interactive prompts)"}
-)
-def build(context, batch=False):
+@invoke.task(pre=[template])
+def build(context):
     """Build all"""
 
-    context.routeros.batch = batch
     do_cleanup(context)
     build_plugin(context)
     build_routeros(context)
     test(context)
 
 
-@invoke.task(
-    pre=[template], help={"batch": "Batch mode (disables interactive prompts)"}
-)
-def routeros_long_term(context, batch=False):
+@invoke.task(pre=[template])
+def routeros_long_term(context):
     """Build RouterOS (long-term)"""
 
-    context.routeros.batch = batch
     build_routeros(context, routeros_branch="routeros-long-term")
 
 
-@invoke.task(
-    pre=[template], help={"batch": "Batch mode (disables interactive prompts)"}
-)
-def routeros(context, batch=False):
+@invoke.task(pre=[template])
+def routeros(context):
     """Build RouterOS (stable)"""
 
-    context.routeros.batch = batch
     build_routeros(context, routeros_branch="routeros")
 
 
-@invoke.task(
-    pre=[template], help={"batch": "Batch mode (disables interactive prompts)"}
-)
-def routeros7(context, batch=False):
+@invoke.task(pre=[template])
+def routeros7(context):
     """Build RouterOS 7 (stable)"""
 
-    context.routeros.batch = batch
     build_routeros(context, routeros_branch="routeros7")
 
 
-@invoke.task(help={"batch": "Batch mode (disables interactive prompts)"})
-def plugin(context, batch=False):
+@invoke.task()
+def plugin(context):
     """Build 'vagrant-routeros' plugin"""
 
-    context.routeros.batch = batch
     build_plugin(context)
 
 
@@ -356,6 +289,4 @@ def get_branches():
     return branches
 
 
-invoke.main.program.config.update(
-    {"routeros": {"batch": False, "branches": get_branches()}}
-)
+invoke.main.program.config.update({"routeros": {"branches": get_branches()}})

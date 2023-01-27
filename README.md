@@ -139,14 +139,22 @@ is used internally during provision, but you can use `vmNICMACs` to reference in
 
 ## Building the boxes
 
-#### Option 1. Use [pyinvoke](http://www.pyinvoke.org/) script.
+#### Prepare global build environment (Fedora)
+
+```shell
+sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
+sudo dnf --assumeyes install @"C Development Tools and Libraries" vagrant-libvirt ruby-devel python3-virtualenv packer
+sudo usermod `whoami` --append --groups libvirt
+```
+
+#### Use [pyinvoke](http://www.pyinvoke.org/) script to build
 
 ```shell
 virtualenv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
+# "inv --list" shows other tasks that can be used instead of full build 
 inv build
-# inv build --batch # Or: batch mode, no prompts
 deactivate
 ```
 
@@ -160,43 +168,6 @@ vagrant-box-publish --version-separator - --dry-run
 vagrant-box-publish --box-file build/boxes/routeros_6.48.1.box --version-separator - --batch --dry-run
 ```
 
-#### Option 2. Manual build.
-1. Build `vagrant-routeros` plugin
-```shell
-cd tools/vagrant-plugin-builder
-vagrant up && vagrant ssh
-cd /mnt/packer-mikrotik/vagrant-plugins-routeros/
-sudo BUNDLE_SILENCE_ROOT_WARNING=true bundle install && bundle exec rake build
-logout
-cd ../..
-```
-
-2. Get current RouterOS version
-```shell
-# Version 6 stable branch
-ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6 | cut -d' ' -f1)
-# Version 6 long-term branch
-ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6fix | cut -d' ' -f1)
-# Version 7 stable branch
-ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/NEWEST7.stable | cut -d' ' -f1)
-
-echo ${ros_version}
-```
-
-3. Build the box
-```shell
-rm packer_cache -rf; packer build -var ros_ver=${ros_version} \
-  -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json \
-  -on-error=ask -force routeros.json
-```
-
-4. Go to https://www.vagrantup.com/ and manually publish `build/boxes/routeros.box`
-
-#### Windows
-```batch
-powershell '[System.Text.Encoding]::ASCII.GetString((Invoke-WebRequest "http://download2.mikrotik.com/routeros/LATEST.6").Content)'
-rmdir /s /q packer_cache && packer build -var "ros_ver=6.44.2" -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json -on-error=ask -force routeros.json
-```
 
 ## Notes
 ```shell
