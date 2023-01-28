@@ -139,20 +139,23 @@ is used internally during provision, but you can use `vmNICMACs` to reference in
 
 ## Building the boxes
 
-#### Option 1. Use [pyinvoke](http://www.pyinvoke.org/) script.
+#### Prepare global build environment (Fedora)
 
 ```shell
-inv build
-# Batch mode, no prompts
-inv build --batch
+sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
+sudo dnf --assumeyes install @"C Development Tools and Libraries" vagrant-libvirt ruby-devel python3-virtualenv packer
+sudo usermod `whoami` --append --groups libvirt
 ```
 
-The script needs Python3 installed and uses additional packages. They can be
-installed using pip (setting up a virtual environment is strongly recommended -
-see `Step 2` [here](https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-programming-environment-on-an-ubuntu-16-04-server)
-for details)
+#### Use [pyinvoke](http://www.pyinvoke.org/) script to build
+
 ```shell
+virtualenv venv
+source venv/bin/activate
 pip3 install -r requirements.txt
+# "inv --list" shows other tasks that can be used instead of full build 
+inv build
+deactivate
 ```
 
 Go to https://www.vagrantup.com/ and manually publish `build/boxes/routeros*.box` files or
@@ -165,43 +168,6 @@ vagrant-box-publish --version-separator - --dry-run
 vagrant-box-publish --box-file build/boxes/routeros_6.48.1.box --version-separator - --batch --dry-run
 ```
 
-#### Option 2. Manual build.
-1. Build `vagrant-routeros` plugin
-```shell
-cd tools/vagrant-plugin-builder
-vagrant up && vagrant ssh
-cd /mnt/packer-mikrotik/vagrant-plugins-routeros/
-bundle install && bundle exec rake build
-logout
-cd ../..
-```
-
-2. Get current RouterOS version
-```shell
-# Version 6 stable branch
-ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6 | cut -d' ' -f1)
-# Version 6 long-term branch
-ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6fix | cut -d' ' -f1)
-# Version 7 stable branch
-ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/NEWEST7.stable | cut -d' ' -f1)
-
-echo ${ros_version}
-```
-
-3. Build the box
-```shell
-rm packer_cache -rf; packer build -var ros_ver=${ros_version} \
-  -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json \
-  -on-error=ask -force routeros.json
-```
-
-4. Go to https://www.vagrantup.com/ and manually publish `build/boxes/routeros.box`
-
-#### Windows
-```batch
-powershell '[System.Text.Encoding]::ASCII.GetString((Invoke-WebRequest "http://download2.mikrotik.com/routeros/LATEST.6").Content)'
-rmdir /s /q packer_cache && packer build -var "ros_ver=6.44.2" -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json -on-error=ask -force routeros.json
-```
 
 ## Notes
 ```shell
