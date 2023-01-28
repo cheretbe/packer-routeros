@@ -45,7 +45,7 @@ def build_routeros(context, routeros_branch="*"):
         " -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json"
         f' -var "box_path=build/boxes"'
         f' -only="{branch_filter}"'
-        f" -on-error=abort -force routeros.pkr.hcl",
+        f' -on-error={"ask" if context.routeros.debug else "abort"} -force routeros.pkr.hcl',
         echo=True,
     )
 
@@ -189,34 +189,38 @@ def template(context):
     build_template(context, "routeros.pkr.hcl")
 
 
-@invoke.task(pre=[template])
-def build(context):
+@invoke.task(pre=[template], help={"debug": "Pause Packer on error"})
+def build(context, debug=False):
     """Build all"""
 
+    context.routeros.debug = debug
     do_cleanup(context)
     build_plugin(context)
     build_routeros(context)
     test(context)
 
 
-@invoke.task(pre=[template])
-def routeros_long_term(context):
+@invoke.task(pre=[template], help={"debug": "Pause Packer on error"})
+def routeros_long_term(context, debug=False):
     """Build RouterOS (long-term)"""
 
+    context.routeros.debug = debug
     build_routeros(context, routeros_branch="routeros-long-term")
 
 
-@invoke.task(pre=[template])
-def routeros(context):
+@invoke.task(pre=[template], help={"debug": "Pause Packer on error"})
+def routeros(context, debug=False):
     """Build RouterOS (stable)"""
 
+    context.routeros.debug = debug
     build_routeros(context, routeros_branch="routeros")
 
 
-@invoke.task(pre=[template])
-def routeros7(context):
+@invoke.task(pre=[template], help={"debug": "Pause Packer on error"})
+def routeros7(context, debug=False):
     """Build RouterOS 7 (stable)"""
 
+    context.routeros.debug = debug
     build_routeros(context, routeros_branch="routeros7")
 
 
