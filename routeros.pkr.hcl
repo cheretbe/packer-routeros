@@ -44,6 +44,7 @@ source "virtualbox-iso" "routeros" {
     "<wait5>", "/import setup.rsc<enter>",
     "<wait10><wait10><wait10>"
   ]
+  headless                = true
   disk_size               = "256"
   format                  = "ova"
   guest_additions_mode    = "disable"
