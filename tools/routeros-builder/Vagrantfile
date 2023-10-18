@@ -1,0 +1,19 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/ubuntu2004"
+  config.vm.hostname = "routeros-builder"
+  # https://vagrant-libvirt.github.io/vagrant-libvirt/configuration.html
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.machine_type = "pc-i440fx-jammy"
+    libvirt.cpu_mode = "host-passthrough"
+    # https://github.com/cheretbe/notes/blob/master/linux/kvm.md#local-storage-pool
+    libvirt.storage_pool_name = "default"
+    libvirt.memory = "2048"
+    libvirt.cpus = "2"
+
+    # For virtualbox to work in the VM
+    libvirt.nested = true
+  end
+
+  config.vm.provision "shell", name: "Provision build environment",
+    path: "scripts/provision.sh", keep_color: true
+end
