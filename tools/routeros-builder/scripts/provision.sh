@@ -23,28 +23,3 @@ DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get -qq update
 echo "Installing apt packages"
 DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get -qq install \
   build-essential python3-venv vagrant virtualbox-6.1 packer
-
-echo "Cloning https://github.com/cheretbe/packer-routeros.git"
-if [ -d packer-routeros ]
-then
-    cd packer-routeros
-    git pull
-else
-    git clone https://github.com/cheretbe/packer-routeros.git
-    cd packer-routeros
-fi
-
-
-echo "Activate '.venv' virtual environment"
-python3 -m venv ~/.venv
-source ~/.venv/bin/activate
-
-echo "Install pip packages"
-echo "--------------------"
-pip3 install --progress-bar off --upgrade pip
-pip3 install --progress-bar off --root-user-action=ignore wheel
-pip3 install --progress-bar off --root-user-action=ignore -r requirements.txt
-
-echo "Build boxes"
-echo "-----------"
-inv build --batch
