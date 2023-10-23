@@ -21,28 +21,30 @@ locals {
   # 7.x: a - select all, i - install, y - disk erasure warning
   install_seq = local.ver_major >= 7 ? "a<wait>i<wait>y" : "a<wait>i<wait>n<wait>y"
   old_login_seq = "/user set [/user find name=\"admin\"] password=\"vagrant\"<enter>"
-  v6_49_plus_login_seq = "vagrant<enter><wait><wait>vagrant<enter>"
+  v6_49_plus_login_seq = "vagrant<enter><wait3s>vagrant<enter>"
   login_seq = local.ver_major >= 7 || (local.ver_major >= 6 && local.ver_minor >= 49) ? local.v6_49_plus_login_seq : local.old_login_seq
 }
 
 source "virtualbox-iso" "routeros" {
   boot_command            = [
-    "<wait5>",
+    "<wait5s>",
     local.install_seq,
-    "<wait10><wait10><enter>",
-    "<wait10><wait10><wait10>",
-    "admin<enter><wait><wait>",
-    "<enter><wait><wait>",
-    "n<wait><wait>",
-    "<enter><wait5>",
+    # Installation. Waiting for "Software installed. Press ENTER to reboot" message
+    "<wait1m><enter>",
+    # Reboot. Waiting for login prompt
+    "<wait30s>",
+    "admin<enter><wait3s>",
+    "<enter><wait3s>",
+    "n<wait3s>",
+    "<enter><wait5s>",
     local.login_seq,
-    "<wait><wait>",
+    "<wait3s>",
    "/ip dhcp-client add disabled=no interface=ether1 add-default-route=no use-peer-dns=no use-peer-ntp=no<enter>",
-    "<wait5>",
+    "<wait5s>",
     ":global packerHost \"http://{{ .HTTPIP }}:{{ .HTTPPort }}\"<enter>",
     "/tool fetch url=\"$packerHost/setup.rsc\" keep-result=yes dst-path=\"setup.rsc\"<enter>",
-    "<wait5>", "/import setup.rsc<enter>",
-    "<wait10><wait10><wait10>"
+    "<wait5s>", "/import setup.rsc<enter>",
+    "<wait30s>"
   ]
   headless                = true
   disk_size               = "256"
