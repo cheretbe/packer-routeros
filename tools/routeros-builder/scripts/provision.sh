@@ -21,5 +21,11 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/oracl
 echo "Updating apt package information"
 DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get -qq update
 echo "Installing apt packages"
+# 'vagrant cloud publish' fails on 2.4.0 with an unhelpful message:
+# Failed to create box cheretbe/routeros. Vagrant Cloud request failed
+# VAGRANT_LOG=info setting shows a weird call to https://vagrantcloud.com/api/v2/api/v1/ URL
+# Anyway, we just stick with version 2.3.7-1 for now
+Vagrant Cloud request failed
+
 DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get -qq install \
-  build-essential python3-venv vagrant virtualbox-6.1 packer
+  build-essential python3-venv vagrant=2.3.7-1 virtualbox-6.1 packer
