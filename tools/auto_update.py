@@ -76,7 +76,7 @@ def main(args):
                             "vagrant", "ssh", "--",
                             "ao-env/bin/vagrant-box-publish",
                             "--box-file", f"packer-routeros/build/boxes/{branch['name']}_{branch['version']}.box",
-                            "--version-separator", "-", "--batch", "--dry-run"
+                            "--version-separator", "-", "--batch"
                         ],
                         cwd=builder_dir
                     )
