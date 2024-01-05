@@ -84,7 +84,7 @@ def build_routeros(context, routeros_branch):
 
     print("Running packer init...")
     context.run(
-        "packer init", echo=True
+        "packer init routeros.pkr.hcl", echo=True
     )
 
     packer_error_action = "cleanup" if context.routeros.batch else "ask"
