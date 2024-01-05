@@ -2,9 +2,18 @@
 
 set -euo pipefail
 
+# Comment out the following
+#      nameservers:
+#        addresses: [4.2.2.1, 4.2.2.2, 208.67.220.220]
+sed -i 's/^\s*nameservers:/#&/' /etc/netplan/01-netcfg.yaml
+sed -i 's/^\s*addresses:/#&/' /etc/netplan/01-netcfg.yaml
+
+netplan apply
+
 mkdir -p /etc/systemd/resolved.conf.d
 cat <<EOF >/etc/systemd/resolved.conf.d/10-disable-dns-stub.conf
 [Resolve]
+DNS=
 DNSStubListener=no
 EOF
 systemctl restart systemd-resolved.service
