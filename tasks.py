@@ -82,6 +82,11 @@ def build_routeros(context, routeros_branch):
             "Do you want to rebuild it?", context.routeros.batch, True
         )
 
+    print("Running packer init...")
+    context.run(
+        "packer init", echo=True
+    )
+
     packer_error_action = "cleanup" if context.routeros.batch else "ask"
     print("Building the box...")
     context.run(

@@ -1,3 +1,15 @@
+packer {
+  required_plugins {
+    virtualbox = {
+      source  = "github.com/hashicorp/virtualbox"
+      version = ">= 1.0.0"
+    }
+    vagrant = {
+      version = ">= 1.0.0"
+      source = "github.com/hashicorp/vagrant"
+    }
+  }
+}
 
 variable "box_file_name" {
   type    = string
