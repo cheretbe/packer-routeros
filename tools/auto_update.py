@@ -9,13 +9,13 @@ import subprocess
 def main(args):
     ros_branches = [
         {
-            "name": "routeros",
+            "name": "routeros-long-term",
             "version_file": "LATEST.6fix",
             "version": None,
             "published_version": None
         },
         {
-            "name": "routeros-long-term",
+            "name": "routeros",
             "version_file": "LATEST.6",
             "version": None,
             "published_version": None
