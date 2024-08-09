@@ -308,7 +308,7 @@ def outdated(context):  # pylint: disable=unused-argument
         ),
         types.SimpleNamespace(
             branch_name="7 (stable)",
-            version_url="http://upgrade.mikrotik.com/routeros/NEWEST7.stable",
+            version_url="http://upgrade.mikrotik.com/routeros/NEWESTa7.stable",
             box_name="cheretbe/routeros7",
             box_url="https://app.vagrantup.com/api/v1/box/cheretbe/routeros7"
         )
