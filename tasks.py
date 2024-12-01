@@ -54,7 +54,7 @@ def build_routeros(context, routeros_branch):
         version_url = "http://upgrade.mikrotik.com/routeros/LATEST.6"
     elif routeros_branch == "routeros7":
         branch_name = "7 (stable)"
-        version_url = "http://upgrade.mikrotik.com/routeros/NEWEST7.stable"
+        version_url = "http://upgrade.mikrotik.com/routeros/NEWESTa7.stable"
     else:
         sys.exit(f"ERROR: Unknow RouterOS branch code: {routeros_branch}")
 
