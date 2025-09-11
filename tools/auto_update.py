@@ -12,35 +12,29 @@ def main(args):
             "name": "routeros-long-term",
             "version_file": "LATEST.6fix",
             "version": None,
-            "published_version": None
+            "published_version": None,
         },
-        {
-            "name": "routeros",
-            "version_file": "LATEST.6",
-            "version": None,
-            "published_version": None
-        },
-        {
-            "name": "routeros7",
-            "version_file": "NEWEST7.stable",
-            "version": None,
-            "published_version": None
-        }
+        {"name": "routeros", "version_file": "LATEST.6", "version": None, "published_version": None},
+        {"name": "routeros7", "version_file": "NEWESTa7.stable", "version": None, "published_version": None},
     ]
 
     up_to_date = True
     print("Getting current ROS versions")
     for branch in ros_branches:
         # Expected format: 7.2.3 1651504697
-        branch["version"] = requests.get(f"http://upgrade.mikrotik.com/routeros/{branch['version_file']}").text.split(" ")[0]
+        branch["version"] = requests.get(
+            f"http://upgrade.mikrotik.com/routeros/{branch['version_file']}"
+        ).text.split(" ")[0]
         print(branch["name"] + ": " + branch["version"])
 
     print("Getting published box versions")
     for branch in ros_branches:
         # Expected format: 6.49.6-0
-        branch["published_version"] = requests.get(
-            f"https://app.vagrantup.com/api/v1/box/cheretbe/{branch['name']}"
-        ).json()["current_version"]["version"].split("-")[0]
+        branch["published_version"] = (
+            requests.get(f"https://app.vagrantup.com/api/v1/box/cheretbe/{branch['name']}")
+            .json()["current_version"]["version"]
+            .split("-")[0]
+        )
         print(branch["name"] + ": " + branch["published_version"])
         if branch["version"] != branch["published_version"]:
             up_to_date = False
@@ -53,18 +47,24 @@ def main(args):
         print(f"Using helper VM in '{builder_dir}'")
 
         try:
-            subprocess.check_call(
-                ["vagrant", "up"],
-                cwd=builder_dir
-            )
+            subprocess.check_call(["vagrant", "up"], cwd=builder_dir)
 
             print("\nAuthenicating on vagrant cloud")
             subprocess.check_call(
                 [
-                    "vagrant", "ssh", "--",
-                    "vagrant", "cloud", "auth", "login", "-u", "cheretbe", "-t", args.vagrantup_token
+                    "vagrant",
+                    "ssh",
+                    "--",
+                    "vagrant",
+                    "cloud",
+                    "auth",
+                    "login",
+                    "-u",
+                    "cheretbe",
+                    "-t",
+                    args.vagrantup_token,
                 ],
-                cwd=builder_dir
+                cwd=builder_dir,
             )
 
             print("\nPublishing boxes")
@@ -73,20 +73,22 @@ def main(args):
                     print("")
                     subprocess.check_call(
                         [
-                            "vagrant", "ssh", "--",
+                            "vagrant",
+                            "ssh",
+                            "--",
                             "ao-env/bin/vagrant-box-publish",
-                            "--box-file", f"packer-routeros/build/boxes/{branch['name']}_{branch['version']}.box",
-                            "--version-separator", "-", "--batch"
+                            "--box-file",
+                            f"packer-routeros/build/boxes/{branch['name']}_{branch['version']}.box",
+                            "--version-separator",
+                            "-",
+                            "--batch",
                         ],
-                        cwd=builder_dir
+                        cwd=builder_dir,
                     )
         finally:
             print("\nDestroying helper VM")
             try:
-                subprocess.check_call(
-                    ["vagrant", "destroy", "-f"],
-                    cwd=builder_dir
-                )
+                subprocess.check_call(["vagrant", "destroy", "-f"], cwd=builder_dir)
             except:
                 pass
 
