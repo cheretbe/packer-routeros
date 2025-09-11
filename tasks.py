@@ -108,45 +108,11 @@ def build_routeros(context, routeros_branch):
 
 def build_plugin(context):
     print("Building 'vagrant-routeros' plugin...")
-    vm_dir = os.path.join(script_dir, "tools/vagrant-plugin-builder")
-    print(f"Using helper VM in '{vm_dir}'")
-    current_vm_state = ""
-    with context.cd(vm_dir):
-        run_result = context.run(
-            command="vagrant status --machine-readable", hide=True
-        )
-    for line in run_result.stdout.splitlines():
-        values = line.split(",")
-        if len(values) > 3:
-            if values[1] == "default" and values[2] == "state":
-                current_vm_state = values[3]
-    vm_needs_creation = current_vm_state == "not_created"
-    vm_needs_start = current_vm_state != "running"
-    vm_needs_halt = current_vm_state == "poweroff"
+    context.run(
+        'docker run --rm -v $(pwd):/packer-routeros -w /packer-routeros/vagrant-plugins-routeros ruby:3.4 sh -c "bundle install && bundle exec rake build"',
+        echo=True,
+    )
 
-    if vm_needs_creation:
-        print("The VM in 'tools/vagrant-plugin-builder' is not created")
-        print("This script will create the VM and destroy if after the build")
-        ask_for_confirmation("Continue?", context.routeros.batch, True)
-
-    if vm_needs_start:
-        with context.cd(vm_dir):
-            context.run("vagrant up", pty=True)
-
-    with context.cd(vm_dir):
-        context.run(
-            "vagrant ssh -- '(source .bash_profile; "
-            "cd /mnt/packer-mikrotik/vagrant-plugins-routeros/; "
-            "bundle install; "
-            "bundle exec rake build)'"
-        )
-
-    if vm_needs_creation:
-        with context.cd(vm_dir):
-            context.run("vagrant destroy -f")
-    elif vm_needs_halt:
-        with context.cd(vm_dir):
-            context.run("vagrant halt")
 
 def remove_test_boxes(context):
     for line in context.run("vagrant box list", hide=True).stdout.splitlines():
