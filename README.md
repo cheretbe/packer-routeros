@@ -154,7 +154,7 @@ inv build
 inv build --batch
 ```
 
-The script needs Python3 installed and uses additional packages. They can be
+The script needs Python 3.9 installed and uses additional packages. They can be
 installed using pip (setting up a virtual environment is strongly recommended -
 see `Step 2` [here](https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-programming-environment-on-an-ubuntu-16-04-server)
 for details)
@@ -163,24 +163,20 @@ pip3 install -r requirements.txt
 ```
 
 Go to https://www.vagrantup.com/ and manually publish `build/boxes/routeros*.box` files or
-use [vagrant_box_publish.py](https://github.com/cheretbe/ao-env/blob/master/bin/vagrant_box_publish.py)
+use [tools/box_publish.py](./tools/box_publish.py)
 script
 ```shell
 # Interactive mode
-vagrant-box-publish --version-separator - --dry-run
+vagrant-box-publish --dry-run
 # Batch mode
-vagrant-box-publish --box-file build/boxes/routeros_6.48.1.box --version-separator - --batch --dry-run
+vagrant-box-publish --box-file build/boxes/routeros_6.48.1.box --batch --dry-run
 ```
 
 #### Option 2. Manual build.
 1. Build `vagrant-routeros` plugin
 ```shell
-cd tools/vagrant-plugin-builder
-vagrant up && vagrant ssh
-cd /mnt/packer-mikrotik/vagrant-plugins-routeros/
-bundle install && bundle exec rake build
-logout
-cd ../..
+docker run --rm -v $(pwd):/packer-routeros -w /packer-routeros/vagrant-plugins-routeros ruby:3.4 \
+  sh -c "bundle install && bundle exec rake build"
 ```
 
 2. Get current RouterOS version
@@ -190,7 +186,7 @@ ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6 | cut -d' ' 
 # Version 6 long-term branch
 ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6fix | cut -d' ' -f1)
 # Version 7 stable branch
-ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/NEWEST7.stable | cut -d' ' -f1)
+ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/NEWESTa7.stable | cut -d' ' -f1)
 
 echo ${ros_version}
 ```
