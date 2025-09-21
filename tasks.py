@@ -5,11 +5,12 @@ import json
 import pathlib
 import types
 import itertools
-import distutils.version
 import requests
 import invoke
 import invoke.program
 import PyInquirer
+import packaging.version
+import tools.routeros_utils
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -135,7 +136,11 @@ def register_test_box(context, routeros_branch):
             f"Couldn't find files matching pattern 'build/boxes/{routeros_branch}"
             f"_*.box'. Use 'inv {routeros_branch}' to build a box"
         )
-    box_file = f"{routeros_branch}_" + max(box_versions, key=distutils.version.LooseVersion) + ".box"
+    box_file = (
+        f"{routeros_branch}_"
+        + max(box_versions, key=tools.routeros_utils.normalize_routeros_version)
+        + ".box"
+    )
     box_file = str(boxes_dir / box_file)
     context.run(f"vagrant box add packer_test_{routeros_branch} {box_file}", pty=True)
 
@@ -268,11 +273,11 @@ def outdated(context):  # pylint: disable=unused-argument
 
     for ros_version in ros_version_info:
         print(f"Checking RouterOS {ros_version.branch_name} version")
-        current_version = distutils.version.LooseVersion(
+        current_version = tools.routeros_utils.normalize_routeros_version(
             requests.get(ros_version.version_url).text.split(" ")[0]
         )
         box_version = requests.get(ros_version.box_url).json()["current_version"]["version"]
-        box_os_version = distutils.version.LooseVersion(box_version.split("-")[0])
+        box_os_version = tools.routeros_utils.normalize_routeros_version(box_version.split("-")[0])
 
         if box_os_version == current_version:
             print(f"Published version {box_version} of '{ros_version.box_name}' is up to date")

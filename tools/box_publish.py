@@ -11,6 +11,7 @@ import subprocess
 import requests
 import PyInquirer
 import packaging.version
+import routeros_utils
 
 
 def ask_for_confirmation(prompt, batch_mode, default):
@@ -38,10 +39,13 @@ def ask_for_confirmation(prompt, batch_mode, default):
 
 def inc_version_release(new_base_version, current_version, separator):
     # print(current_version.split(separator))
-    current_base_version, current_subversion = current_version.split(separator)
+    print(current_version.rsplit(separator, maxsplit=1))
+    current_base_version, current_subversion = current_version.rsplit(separator, maxsplit=1)
     if current_base_version == new_base_version:
         new_version = current_base_version + separator + str(int(current_subversion) + 1)
-    elif packaging.version.parse(new_base_version) > packaging.version.parse(current_version):
+    elif routeros_utils.normalize_routeros_version(
+        new_base_version
+    ) > routeros_utils.normalize_routeros_version(current_base_version):
         new_version = new_base_version + separator + "0"
     else:
         sys.exit(

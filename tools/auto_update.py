@@ -4,6 +4,8 @@ import argparse
 import requests
 import pathlib
 import subprocess
+import packaging.version
+import routeros_utils
 
 
 def main(args):
@@ -36,7 +38,9 @@ def main(args):
             .split("-")[0]
         )
         print(branch["name"] + ": " + branch["published_version"])
-        if branch["version"] != branch["published_version"]:
+        if routeros_utils.normalize_routeros_version(
+            branch["version"]
+        ) != routeros_utils.normalize_routeros_version(branch["published_version"]):
             up_to_date = False
 
     if up_to_date:
@@ -70,7 +74,9 @@ def main(args):
 
             print("\nPublishing boxes")
             for branch in ros_branches:
-                if branch["version"] != branch["published_version"]:
+                if routeros_utils.normalize_routeros_version(
+                    branch["version"]
+                ) != routeros_utils.normalize_routeros_version(branch["published_version"]):
                     print("")
                     if args.use_helper_vm:
                         subprocess.check_call(
