@@ -1,22 +1,43 @@
 Vagrant.configure("2") do |config|
-  config.vm.box = "generic/ubuntu2004"
   config.vm.hostname = "routeros-builder"
+
+  # Build script fails on Python version > 3.9. Ubuntu 22.04 has Python 3.10, so
+  # we stick with 20.04 until the script is fixed
+  # TODO: switch to some recent Debian once the build script is fixed
+
   # https://vagrant-libvirt.github.io/vagrant-libvirt/configuration.html
   config.vm.provider :libvirt do |libvirt|
+    config.vm.box = "generic/ubuntu2004"
     libvirt.machine_type = "pc-i440fx-bionic"
     libvirt.cpu_mode = "host-passthrough"
     # https://github.com/cheretbe/notes/blob/master/linux/kvm.md#local-storage-pool
     libvirt.storage_pool_name = "default"
     libvirt.memory = "2048"
     libvirt.cpus = "2"
-
     # For virtualbox to work in the VM
     libvirt.nested = true
   end
 
-  config.vm.provision "shell", name: "Provision build environment",
+  config.vm.provider "virtualbox" do |vb|
+    config.vm.box = "ubuntu/focal64"
+    vb.memory = "2048"
+    vb.cpus = 2
+    # For virtualbox to work in the VM
+    vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
+  end
+
+  config.vm.provision "shell", name: "Provision",
     path: "scripts/provision.sh", keep_color: true
 
-  config.vm.provision "shell", name: "Build boxes",
-    path: "scripts/build.sh", keep_color: true, privileged: false
+  # if called repeatedly scp fails on overwriting readonly files in .git
+  # subdir. Since we need latest version of the source it's simpler just
+  # delete the destination.
+  config.vm.provision "shell", name: "Remove existing packer-routeros directory",
+    keep_color: true, privileged: false,
+    inline: "rm -rf packer-routeros/"
+
+  config.vm.provision "file", source: "../..", destination: "$HOME/packer-routeros"
+
+  config.vm.provision "shell", name: "Prepare build environment",
+    path: "scripts/prepare_build_env.sh", keep_color: true, privileged: false
 end

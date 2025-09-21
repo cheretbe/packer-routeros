@@ -69,7 +69,7 @@ source "virtualbox-iso" "routeros" {
   shutdown_command        = "execute \"/system shutdown\""
   ssh_password            = "vagrant"
   ssh_username            = "admin"
-  ssh_wait_timeout        = "60s"
+  ssh_wait_timeout        = "120s"
   vboxmanage              = [
     ["modifyvm", "{{ .Name }}", "--memory", "128"],
     ["modifyvm", "{{ .Name }}", "--graphicscontroller", "vmsvga"],
