@@ -13,6 +13,13 @@
 * Version 6 Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros
 * Version 7 Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros7
 
+#### Licensing
+:warning::warning: RouterOS needs a valid licence to function. Without a license it will run in 24-hour
+trial mode. The timer pauses when the box is powered off. Once the trial expires, the
+box **becomes inaccessible** and needs to be recreated in order to be used again.
+* https://help.mikrotik.com/docs/spaces/ROS/pages/328149/RouterOS+license+keys
+* https://forum.mikrotik.com/t/24hs-routeros-license-expiration/9647
+
 #### Status
 :warning:`beta` - The boxes are fully functional, but this project is work-in-progress: breaking changes may be introduced at any time.
 
