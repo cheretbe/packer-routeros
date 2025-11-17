@@ -59,6 +59,7 @@ source "virtualbox-iso" "routeros" {
     "<wait30s>"
   ]
   headless                = true
+  vrdp_bind_address       = "0.0.0.0"
   disk_size               = "256"
   format                  = "ova"
   guest_additions_mode    = "disable"

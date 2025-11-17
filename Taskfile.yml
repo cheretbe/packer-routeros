@@ -1,0 +1,103 @@
+version: '3'
+
+vars:
+  VAGRANT_ROUTEROS_PLUGIN_VERSION:
+    sh: jq -r '.vagrant_routeros_plugin_version' vagrant-plugins-routeros/vagrant_routeros_plugin_version.json
+  VAGRANT_ROUTEROS_PLUGIN_PATH: vagrant-plugins-routeros/pkg/vagrant-routeros-{{.VAGRANT_ROUTEROS_PLUGIN_VERSION}}.gem
+  ROS_VERSION_6:
+    sh: curl -s http://upgrade.mikrotik.com/routeros/LATEST.6 | cut -d' ' -f1
+  ROS_VERSION_6_LONG_TERM:
+    sh: curl -s http://upgrade.mikrotik.com/routeros/LATEST.6fix | cut -d' ' -f1
+  ROS_VERSION_7:
+    sh: curl -s http://upgrade.mikrotik.com/routeros/NEWESTa7.stable | cut -d' ' -f1
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  # get-current-versions:
+  #   internal: true
+  #   # silent: true
+  #   vars:
+  #     ROS_VERSION_6:
+  #       sh: curl -s http://upgrade.mikrotik.com/routeros/LATEST.6 | cut -d' ' -f1
+  #     ROS_VERSION_6_LONG_TERM:
+  #       sh: curl -s http://upgrade.mikrotik.com/routeros/LATEST.6fix | cut -d' ' -f1
+  #     ROS_VERSION_7:
+  #       sh: curl -s http://upgrade.mikrotik.com/routeros/NEWESTa7.stable | cut -d' ' -f1
+  #   cmds:
+  #     - echo "RouterOS 6{{":"}} {{.ROS_VERSION_6}}"
+  #     - echo "RouterOS 6 long-term{{":"}} {{.ROS_VERSION_6_LONG_TERM}}"
+  #     - echo "RouterOS 7{{":"}} {{.ROS_VERSION_7}}"
+
+  check-plugin-gem:
+    desc: Check if the vagrant-routeros plugin gem exists
+    cmds:
+      - |
+        test -f {{.VAGRANT_ROUTEROS_PLUGIN_PATH}} || (echo "Plugin gem file not found: {{.VAGRANT_ROUTEROS_PLUGIN_PATH}}. Use build-plugin task to build it" && exit 1)
+    internal: true
+    silent: true
+
+  build-plugin:
+    desc: Build the vagrant-routeros plugin using Docker
+    cmds:
+      - docker run --rm -v $(pwd):/packer-routeros -w /packer-routeros/vagrant-plugins-routeros ruby:3.4 sh -c "bundle install && bundle exec rake build"
+      - sudo chown -R $(id -u):$(id -g) vagrant-plugins-routeros/pkg
+    silent: false
+
+  build-box:
+    internal: true
+    silent: true
+    vars:
+      BOX_FILE_NAME: build/boxes/{{.ROUTEROS_BRANCH}}_{{.ROS_VERSION}}.box
+      DESCRIPTION_FILE: build/boxes/{{.ROUTEROS_BRANCH}}_{{.ROS_VERSION}}.md
+    cmds:
+      - echo "Building RouterOS {{.ROS_VERSION}}"
+      - echo "Running packer init..."
+      - packer init routeros.pkr.hcl
+      - echo "Building the box..."
+      - |
+        packer build -var "ros_ver={{.ROS_VERSION}}" \
+          -var "box_file_name={{.BOX_FILE_NAME}}" \
+          -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json \
+          -on-error=cleanup -force routeros.pkr.hcl
+      # - mkdir -p build/boxes
+      - echo "Writing '{{.DESCRIPTION_FILE}}'"
+      - |
+        cat > {{.DESCRIPTION_FILE}} <<EOF
+        **Updated ROS to version {{.ROS_VERSION}}**<br>
+        https://github.com/cheretbe/packer-routeros/blob/master/README.md
+        EOF
+
+  routeros:
+    desc: Build RouterOS 6 box
+    deps:
+      - check-plugin-gem
+    cmds:
+      - task: build-box
+        vars:
+          ROUTEROS_BRANCH: routeros
+          ROS_VERSION: "{{.ROS_VERSION_6}}"
+
+  routeros-long-term:
+    desc: Build RouterOS 6 long-term box
+    deps:
+      - check-plugin-gem
+    cmds:
+      - task: build-box
+        vars:
+          ROUTEROS_BRANCH: routeros-long-term
+          ROS_VERSION: "{{.ROS_VERSION_6_LONG_TERM}}"
+
+  routeros7:
+    desc: Build RouterOS 7 stable box
+    deps:
+      - check-plugin-gem
+    cmds:
+      - task: build-box
+        vars:
+          ROUTEROS_BRANCH: routeros7
+          ROS_VERSION: "{{.ROS_VERSION_7}}"
