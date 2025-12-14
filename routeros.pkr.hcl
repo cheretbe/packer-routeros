@@ -51,13 +51,12 @@ source "virtualbox-iso" "routeros" {
     "<enter><wait5s>",
     local.login_seq,
     "<wait3s>",
+    "/ip service disable ssh<enter>",
     "/ip dhcp-client add disabled=no interface=ether1 add-default-route=no use-peer-dns=no use-peer-ntp=no<enter>",
     "<wait5s>",
-    "/ip service disable ssh<enter>",
     ":global packerHost \"http://{{ .HTTPIP }}:{{ .HTTPPort }}\"<enter>",
     "/tool fetch url=\"$packerHost/setup.rsc\" keep-result=yes dst-path=\"setup.rsc\"<enter>",
-    "<wait5s>", "/import setup.rsc<enter>",
-    "<wait30s>"
+    "<wait5s>", "/import setup.rsc<enter>"
   ]
   headless                = true
   vrdp_bind_address       = "0.0.0.0"
