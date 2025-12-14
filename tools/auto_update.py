@@ -4,7 +4,6 @@ import argparse
 import requests
 import pathlib
 import subprocess
-import packaging.version
 import routeros_utils
 
 
@@ -14,10 +13,29 @@ def main(args):
             "name": "routeros-long-term",
             "version_file": "LATEST.6fix",
             "version": None,
+            "normalized_version": None,
+            "published_version_full": None,
             "published_version": None,
+            "needs_update": False,
         },
-        {"name": "routeros", "version_file": "LATEST.6", "version": None, "published_version": None},
-        {"name": "routeros7", "version_file": "NEWESTa7.stable", "version": None, "published_version": None},
+        {
+            "name": "routeros",
+            "version_file": "LATEST.6",
+            "version": None,
+            "normalized_version": None,
+            "published_version_full": None,
+            "published_version": None,
+            "needs_update": False,
+        },
+        {
+            "name": "routeros7",
+            "version_file": "NEWESTa7.stable",
+            "version": None,
+            "normalized_version": None,
+            "published_version_full": None,
+            "published_version": None,
+            "needs_update": False,
+        },
     ]
 
     up_to_date = True
@@ -27,21 +45,24 @@ def main(args):
         branch["version"] = requests.get(
             f"http://upgrade.mikrotik.com/routeros/{branch['version_file']}"
         ).text.split(" ")[0]
-        print(branch["name"] + ": " + branch["version"])
+        branch["normalized_version"] = routeros_utils.normalize_routeros_version(branch["version"])
+        print(f"{branch['name']}: {branch['version']} ({branch['normalized_version']})")
 
     print("Getting published box versions")
     for branch in ros_branches:
-        # Expected format: 6.49.6-0
-        branch["published_version"] = (
-            requests.get(f"https://app.vagrantup.com/api/v1/box/cheretbe/{branch['name']}")
-            .json()["current_version"]["version"]
-            .split("-")[0]
+        # Expected format: 6.49.6.0
+        branch["published_version_full"] = requests.get(
+            f"https://app.vagrantup.com/api/v1/box/cheretbe/{branch['name']}"
+        ).json()["current_version"]["version"]
+        branch["published_version"] = routeros_utils.normalize_routeros_version(
+            branch["published_version_full"].rsplit(".", 1)[0]
         )
-        print(branch["name"] + ": " + branch["published_version"])
-        if routeros_utils.normalize_routeros_version(
-            branch["version"]
-        ) != routeros_utils.normalize_routeros_version(branch["published_version"]):
+        if branch["normalized_version"] != branch["published_version"]:
+            branch["needs_update"] = True
             up_to_date = False
+        print(
+            f"{branch['name']}: {branch['published_version_full']} ({branch['published_version']}) { '- needs update' if branch['needs_update'] else ''}"
+        )
 
     if up_to_date:
         print("All boxes are up to date")
@@ -51,33 +72,30 @@ def main(args):
         projects_root_dir = pathlib.Path(__file__).resolve().parent.parent
 
         try:
-            if args.use_helper_vm:
-                print(f"Using helper VM in '{builder_vm_dir}'")
-                subprocess.check_call(("vagrant", "up"), cwd=builder_vm_dir)
+            # if args.use_helper_vm:
+            #     print(f"Using helper VM in '{builder_vm_dir}'")
+            #     subprocess.check_call(("vagrant", "up"), cwd=builder_vm_dir)
 
-            if args.use_helper_vm:
-                pass
-                subprocess.check_call(
-                    (
-                        "vagrant",
-                        "ssh",
-                        "--",
-                        "cd packer-routeros; . ~/.cache/build-venv/bin/activate; inv build --batch",
-                    ),
-                    cwd=builder_vm_dir,
-                )
-            else:
-                subprocess.check_call(
-                    ["inv", "build", "--batch"],
-                    cwd=projects_root_dir,
-                )
+            # if args.use_helper_vm:
+            #     pass
+            #     subprocess.check_call(
+            #         (
+            #             "vagrant",
+            #             "ssh",
+            #             "--",
+            #             "cd packer-routeros; task build",
+            #         ),
+            #         cwd=builder_vm_dir,
+            #     )
+            # else:
+            #     subprocess.check_call(
+            #         ["task", "build"],
+            #         cwd=projects_root_dir,
+            #     )
 
             print("\nPublishing boxes")
             for branch in ros_branches:
-                if routeros_utils.normalize_routeros_version(
-                    branch["version"]
-                ) != routeros_utils.normalize_routeros_version(branch["published_version"]):
-                    print("")
+                if branch["needs_update"]:
                     if args.use_helper_vm:
                         subprocess.check_call(
                             (
@@ -88,14 +106,12 @@ def main(args):
                                 "packer-routeros/tools/box_publish.py",
                                 "--box-file",
                                 f"packer-routeros/build/boxes/{branch['name']}_{branch['version']}.box",
-                                "--version-separator",
-                                "-",
                                 "--hcp-client-id",
                                 args.hcp_client_id,
                                 "--hcp-client-secret",
                                 args.hcp_client_secret,
                                 "--batch",
-                                # "--dry-run",
+                                "--dry-run" if args.dry_run else "",
                             ),
                             cwd=builder_vm_dir,
                         )
@@ -105,10 +121,12 @@ def main(args):
                                 "./tools/box_publish.py",
                                 "--box-file",
                                 f"build/boxes/{branch['name']}_{branch['version']}.box",
-                                "--version-separator",
-                                "-",
+                                "--hcp-client-id",
+                                args.hcp_client_id,
+                                "--hcp-client-secret",
+                                args.hcp_client_secret,
                                 "--batch",
-                                # "--dry-run",
+                                "--dry-run" if args.dry_run else "",
                             ),
                             cwd=projects_root_dir,
                         )
@@ -129,6 +147,7 @@ if __name__ == "__main__":
     parser.add_argument("tg_bot_token", nargs="?", default="", help="Telegram bot token")
     parser.add_argument("tg_chat_id", nargs="?", default="", help="Telegram chat ID")
     parser.add_argument("--use-helper-vm", action="store_true", default=False, help="Use helper VM")
+    parser.add_argument("--dry-run", action="store_true", default=False, help="Dry run mode")
     args = parser.parse_args()
 
     main(args)
