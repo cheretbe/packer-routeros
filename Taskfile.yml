@@ -4,13 +4,21 @@ vars:
   VAGRANT_ROUTEROS_PLUGIN_VERSION:
     sh: jq -r '.vagrant_routeros_plugin_version' vagrant-plugins-routeros/vagrant_routeros_plugin_version.json
   VAGRANT_ROUTEROS_PLUGIN_PATH: vagrant-plugins-routeros/pkg/vagrant-routeros-{{.VAGRANT_ROUTEROS_PLUGIN_VERSION}}.gem
+  ROS_VERSIONS:
+    sh: |
+      echo "{" \
+        "\"routeros\": $(tools/normalize_ros_version.sh "${ROS_VERSION_6:-$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6 | cut -d' ' -f1)}")", \
+        "\"routeros_long_term\": $(tools/normalize_ros_version.sh "${ROS_VERSION_6_LONG_TERM:-$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6fix | cut -d' ' -f1)}")", \
+        "\"routeros7\": $(tools/normalize_ros_version.sh "${ROS_VERSION_7:-$(curl -s http://upgrade.mikrotik.com/routeros/NEWESTa7.stable | cut -d' ' -f1)}")" \
+      "}"
+  ROS_VERSIONS_JSON:
+    ref: "fromJson .ROS_VERSIONS"
   ROS_VERSION_6:
-    sh: echo "${ROS_VERSION_6:-$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6 | cut -d' ' -f1)}"
+    ref: .ROS_VERSIONS_JSON.routeros
   ROS_VERSION_6_LONG_TERM:
-    sh: echo "${ROS_VERSION_6_LONG_TERM:-$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6fix | cut -d' ' -f1)}"
+    ref: .ROS_VERSIONS_JSON.routeros_long_term
   ROS_VERSION_7:
-    sh: echo "${ROS_VERSION_7:-$(curl -s http://upgrade.mikrotik.com/routeros/NEWESTa7.stable | cut -d' ' -f1)}"
-
+    ref: .ROS_VERSIONS_JSON.routeros7
 tasks:
   default:
     desc: List available tasks
@@ -44,22 +52,22 @@ tasks:
     internal: true
     silent: true
     vars:
-      BOX_FILE_NAME: build/boxes/{{.ROUTEROS_BRANCH}}_{{.ROS_VERSION}}.box
-      DESCRIPTION_FILE: build/boxes/{{.ROUTEROS_BRANCH}}_{{.ROS_VERSION}}.md
+      BOX_FILE_NAME: build/boxes/{{.ROUTEROS_BRANCH}}_{{.ROS_VERSION.normalized}}.box
+      DESCRIPTION_FILE: build/boxes/{{.ROUTEROS_BRANCH}}_{{.ROS_VERSION.normalized}}.md
     cmds:
-      - echo "Building RouterOS {{.ROS_VERSION}}"
+      - echo "Building RouterOS {{.ROS_VERSION.raw}}"
       - echo "Running packer init..."
       - packer init routeros.pkr.hcl
       - echo "Building the box..."
       - |
-        packer build -var "ros_ver={{.ROS_VERSION}}" \
+        packer build -var "ros_ver={{.ROS_VERSION.raw}}" \
           -var "box_file_name={{.BOX_FILE_NAME}}" \
           -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json \
           -on-error=cleanup -force routeros.pkr.hcl
       - echo "Writing '{{.DESCRIPTION_FILE}}'"
       - |
         cat > {{.DESCRIPTION_FILE}} <<EOF
-        **Updated ROS to version {{.ROS_VERSION}}**<br>
+        **Updated ROS to version {{.ROS_VERSION.raw}}**<br>
         https://github.com/cheretbe/packer-routeros/blob/master/README.md
         EOF
 
@@ -71,7 +79,8 @@ tasks:
       - task: build-box
         vars:
           ROUTEROS_BRANCH: routeros
-          ROS_VERSION: "{{.ROS_VERSION_6}}"
+          ROS_VERSION:
+            ref: .ROS_VERSION_6
 
   routeros-long-term:
     desc: Build RouterOS 6 long-term box
@@ -81,7 +90,8 @@ tasks:
       - task: build-box
         vars:
           ROUTEROS_BRANCH: routeros-long-term
-          ROS_VERSION: "{{.ROS_VERSION_6_LONG_TERM}}"
+          ROS_VERSION:
+            ref: .ROS_VERSION_6_LONG_TERM
 
   routeros7:
     desc: Build RouterOS 7 stable box
@@ -91,7 +101,8 @@ tasks:
       - task: build-box
         vars:
           ROUTEROS_BRANCH: routeros7
-          ROS_VERSION: "{{.ROS_VERSION_7}}"
+          ROS_VERSION:
+            ref: .ROS_VERSION_7
 
   ping-test:
     internal: true
@@ -128,9 +139,9 @@ tasks:
   test:
     desc: Register temporary vagrant boxes and run some tests on them
     cmds:
-      - vagrant box add --force packer_test_routeros build/boxes/routeros_{{.ROS_VERSION_6}}.box
-      - vagrant box add --force packer_test_routeros-long-term build/boxes/routeros-long-term_{{.ROS_VERSION_6_LONG_TERM}}.box
-      - vagrant box add --force packer_test_routeros7 build/boxes/routeros7_{{.ROS_VERSION_7}}.box
+      - vagrant box add --force packer_test_routeros build/boxes/routeros_{{.ROS_VERSION_6.normalized}}.box
+      - vagrant box add --force packer_test_routeros-long-term build/boxes/routeros-long-term_{{.ROS_VERSION_6_LONG_TERM.normalized}}.box
+      - vagrant box add --force packer_test_routeros7 build/boxes/routeros7_{{.ROS_VERSION_7.normalized}}.box
       - task: run-vagrant-test
       - vagrant box remove -f packer_test_routeros
       - vagrant box remove -f packer_test_routeros-long-term
