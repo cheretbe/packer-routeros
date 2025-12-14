@@ -9,8 +9,9 @@ import datetime
 import pathlib
 import subprocess
 import requests
-import PyInquirer
-import packaging.version
+import questionary
+
+# import packaging.version
 import routeros_utils
 
 
@@ -22,17 +23,9 @@ def ask_for_confirmation(prompt, batch_mode, default):
         )
         confirmed = default
     else:
-        conf_questions = [
-            {
-                "type": "confirm",
-                "name": "continue",
-                "message": prompt,
-                "default": True,
-                "keyboard_interrupt_msg": "",
-            }
-        ]
-        conf_answers = PyInquirer.prompt(conf_questions, keyboard_interrupt_msg="")
-        confirmed = bool(conf_answers) and conf_answers["continue"]
+        confirmed = questionary.confirm(prompt, default=True).ask()
+        if confirmed is None:  # Handle Ctrl+C
+            confirmed = False
     if not confirmed:
         sys.exit("Cancelled by user")
 
@@ -63,20 +56,10 @@ def select_box_file(batch_mode):
         return str(box_files[0])
     if batch_mode:
         sys.exit("More than one box file has been found. Will not display selection " "dialog in batch mode")
-    answers = PyInquirer.prompt(
-        questions=[
-            {
-                "type": "list",
-                "name": "boxfile",
-                "message": "Select a box file to publish",
-                "choices": [str(i) for i in box_files],
-            }
-        ],
-        keyboard_interrupt_msg="",
-    )
-    if not answers:
+    selected = questionary.select("Select a box file to publish", choices=[str(i) for i in box_files]).ask()
+    if selected is None:
         sys.exit("Cancelled by user")
-    return str(answers["boxfile"])
+    return str(selected)
 
 
 # By default login token is in ~/.vagrant.d/data/vagrant_login_token
@@ -144,20 +127,11 @@ def get_box_description(batch_mode, is_new_box):
                     "'box_description.md' is missing. Will not create a new box "
                     "without a description in batch mode"
                 )
-            answers = PyInquirer.prompt(
-                questions=[
-                    {
-                        "type": "editor",
-                        "name": "box_description",
-                        "message": "Please enter box description (Alt+Enter to finish)\n",
-                        "default": box_description,
-                    }
-                ],
-                keyboard_interrupt_msg="",
-            )
-            if not answers:
+            box_description = questionary.text(
+                "Please enter box description", default=box_description, multiline=True
+            ).ask()
+            if box_description is None:
                 sys.exit("Cancelled by user")
-            box_description = answers["box_description"]
     return box_description
 
 
@@ -183,20 +157,11 @@ def get_version_description(box_file, batch_mode):
         version_description = datetime.datetime.now().strftime("**%d.%m.%Y update**")
 
     if not batch_mode:
-        answers = PyInquirer.prompt(
-            questions=[
-                {
-                    "type": "editor",
-                    "name": "version_description",
-                    "message": "Please enter a version description (Alt+Enter to finish)\n",
-                    "default": version_description,
-                }
-            ],
-            keyboard_interrupt_msg="",
-        )
-        if not answers:
+        version_description = questionary.text(
+            "Please enter a version description", default=version_description, multiline=True
+        ).ask()
+        if version_description is None:
             sys.exit("Cancelled by user")
-        version_description = answers["version_description"]
 
     return version_description
 
