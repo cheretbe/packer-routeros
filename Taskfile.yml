@@ -93,13 +93,17 @@ tasks:
           ROUTEROS_BRANCH: routeros7
           ROS_VERSION: "{{.ROS_VERSION_7}}"
 
-  add-test-box:
-    desc: Add a built box to Vagrant for testing
+  ping-test:
     internal: true
-    # silent: true
+    silent: true
+    dir: tests/vagrant_local
     cmds:
       - |
-        vagrant box add --force packer_test_{{.ROUTEROS_BRANCH}} build/boxes/{{.ROUTEROS_BRANCH}}_{{.ROS_VERSION}}.box
+        echo "vagrant ssh {{.VM_NAME}} -- /ping count=3 {{.PING_TARGET}}"
+        ping_output=$(vagrant ssh {{.VM_NAME}} -- /ping count=3 {{.PING_TARGET}})
+        echo "$ping_output"
+        echo "$ping_output" | grep -q "received=3"
+        echo "$ping_output" | grep -q "packet-loss=0%"
 
   run-vagrant-test:
     desc: Run vagrant up in tests directory
@@ -107,23 +111,30 @@ tasks:
     dir: tests/vagrant_local
     cmds:
       - vagrant up
+      - task: ping-test
+        vars: {VM_NAME: host1, PING_TARGET: 192.168.199.11}
+      - task: ping-test
+        vars: {VM_NAME: host1, PING_TARGET: 192.168.199.12}
+      - task: ping-test
+        vars: {VM_NAME: host2, PING_TARGET: 192.168.199.10}
+      - task: ping-test
+        vars: {VM_NAME: host2, PING_TARGET: 192.168.199.12}
+      - task: ping-test
+        vars: {VM_NAME: host3, PING_TARGET: 192.168.199.10}
+      - task: ping-test
+        vars: {VM_NAME: host3, PING_TARGET: 192.168.199.11}
+      - vagrant destroy -f
 
   test:
     desc: Register temporary vagrant boxes and run some tests on them
     cmds:
-      - task: add-test-box
-        vars:
-          ROUTEROS_BRANCH: routeros
-          ROS_VERSION: "{{.ROS_VERSION_6}}"
-      - task: add-test-box
-        vars:
-          ROUTEROS_BRANCH: routeros-long-term
-          ROS_VERSION: "{{.ROS_VERSION_6_LONG_TERM}}"
-      - task: add-test-box
-        vars:
-          ROUTEROS_BRANCH: routeros7
-          ROS_VERSION: "{{.ROS_VERSION_7}}"
+      - vagrant box add --force packer_test_routeros build/boxes/routeros_{{.ROS_VERSION_6}}.box
+      - vagrant box add --force packer_test_routeros-long-term build/boxes/routeros-long-term_{{.ROS_VERSION_6_LONG_TERM}}.box
+      - vagrant box add --force packer_test_routeros7 build/boxes/routeros7_{{.ROS_VERSION_7}}.box
       - task: run-vagrant-test
+      - vagrant box remove -f packer_test_routeros
+      - vagrant box remove -f packer_test_routeros-long-term
+      - vagrant box remove -f packer_test_routeros7
 
   cleanup:
     desc: Clean up build artifacts and temporary files
@@ -135,8 +146,9 @@ tasks:
   build:
     desc: Build and test all RouterOS boxes
     cmds:
-      # - task: cleanup
-      # - task: build-plugin
+      - task: cleanup
+      - task: build-plugin
       - task: routeros
       - task: routeros-long-term
       - task: routeros7
+      - task: test
