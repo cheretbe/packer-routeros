@@ -72,26 +72,26 @@ def main(args):
         projects_root_dir = pathlib.Path(__file__).resolve().parent.parent
 
         try:
-            # if args.use_helper_vm:
-            #     print(f"Using helper VM in '{builder_vm_dir}'")
-            #     subprocess.check_call(("vagrant", "up"), cwd=builder_vm_dir)
+            if args.use_helper_vm:
+                print(f"Using helper VM in '{builder_vm_dir}'")
+                subprocess.check_call(("vagrant", "up"), cwd=builder_vm_dir)
 
-            # if args.use_helper_vm:
-            #     pass
-            #     subprocess.check_call(
-            #         (
-            #             "vagrant",
-            #             "ssh",
-            #             "--",
-            #             "cd packer-routeros; task build",
-            #         ),
-            #         cwd=builder_vm_dir,
-            #     )
-            # else:
-            #     subprocess.check_call(
-            #         ["task", "build"],
-            #         cwd=projects_root_dir,
-            #     )
+            if args.use_helper_vm:
+                pass
+                subprocess.check_call(
+                    (
+                        "vagrant",
+                        "ssh",
+                        "--",
+                        "cd packer-routeros; task build",
+                    ),
+                    cwd=builder_vm_dir,
+                )
+            else:
+                subprocess.check_call(
+                    ["task", "build"],
+                    cwd=projects_root_dir,
+                )
 
             print("\nPublishing boxes")
             for branch in ros_branches:
