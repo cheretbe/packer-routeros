@@ -17,3 +17,5 @@ if ([:pick [/system package update get installed-version] 0 1] = "6") do={
 /tool fetch url="$packerHost/vagrant_provision.rsc" keep-result=yes dst-path="vagrant_provision.rsc"
 
 /file remove setup.rsc
+
+/ip service enable ssh
