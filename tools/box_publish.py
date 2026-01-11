@@ -77,8 +77,9 @@ def check_vagrant_cloud_login(batch_mode):
     ):
         print("You are not currently logged in.")
         sys.exit(
-            "Set HCP_CLIENT_ID, HCP_CLIENT_SECRET env variables "
-            "or use --hcp-client-id --hcp-client-secret options for cloud auth to work"
+            "Set HCP_CLIENT_ID, HCP_CLIENT_SECRET env variables, "
+            "use --hcp-client-id and --hcp-client-secret options or "
+            "use --hcp-creds-prompt option for cloud auth to work"
         )
 
 
@@ -233,6 +234,12 @@ def parse_arguments():
         help="Hashicorp Cloud Portal client secret",
     )
     parser.add_argument(
+        "--hcp-creds-prompt",
+        action="store_true",
+        default=False,
+        help="Prompt for Hashicorp Cloud Portal credentials interactively",
+    )
+    parser.add_argument(
         "-d",
         "--dry-run",
         action="store_true",
@@ -247,6 +254,17 @@ def parse_arguments():
 
 def main():
     options = parse_arguments()
+
+    if options.hcp_creds_prompt:
+        if options.batch:
+            sys.exit("Cannot prompt for HCP credentials in batch mode")
+        print("Enter Hashicorp Cloud Portal credentials")
+        options.hcp_client_id = questionary.text("HCP client ID:").ask()
+        if options.hcp_client_id is None:
+            sys.exit("Cancelled by user")
+        options.hcp_client_secret = questionary.password("HCP client secret:").ask()
+        if options.hcp_client_secret is None:
+            sys.exit("Cancelled by user")
 
     if options.box_file == "":
         options.box_file = select_box_file(batch_mode=options.batch)
