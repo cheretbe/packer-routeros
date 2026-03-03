@@ -146,59 +146,30 @@ is used internally during provision, but you can use `vmNICMACs` to reference in
 
 ## Building the boxes
 
-#### Option 1. Use [pyinvoke](http://www.pyinvoke.org/) script.
+#### Option 1. Auto-update script.
 
 ```shell
-inv build
-# Batch mode, no prompts
-inv build --batch
+# tools/box_publish.py also needs packages from requirements.txt
+# TODO: move publishing to a separate task in the Taskfile and take care of venv init
+# https://github.com/cheretbe/packer-ansible-controller/blob/master/Taskfile.yml#L56
+. ~/.cache/venv/packer-routeros/bin/activate
+
+./tools/auto_update.py $AO_HCP_CLIENT_ID $AO_HCP_CLIENT_SECRET
 ```
 
-The script needs Python 3.9 installed and uses additional packages. They can be
-installed using pip (setting up a virtual environment is strongly recommended -
-see `Step 2` [here](https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-programming-environment-on-an-ubuntu-16-04-server)
-for details)
+#### Option 2. Use [Tasks](https://taskfile.dev/) Taskfile.
+
 ```shell
-pip3 install -r requirements.txt
+task build
 ```
 
 Go to https://www.vagrantup.com/ and manually publish `build/boxes/routeros*.box` files or
 use [tools/box_publish.py](./tools/box_publish.py)
 script
 ```shell
-# Interactive mode
-vagrant-box-publish --dry-run
-# Batch mode
-vagrant-box-publish --box-file build/boxes/routeros_6.48.1.box --batch --dry-run
+# Interactive mode (will ask for box file and HCP credentials)
+./tools/box_publish.py --dry-run
 ```
-
-#### Option 2. Manual build.
-1. Build `vagrant-routeros` plugin
-```shell
-docker run --rm -v $(pwd):/packer-routeros -w /packer-routeros/vagrant-plugins-routeros ruby:3.4 \
-  sh -c "bundle install && bundle exec rake build"
-```
-
-2. Get current RouterOS version
-```shell
-# Version 6 stable branch
-ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6 | cut -d' ' -f1)
-# Version 6 long-term branch
-ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6fix | cut -d' ' -f1)
-# Version 7 stable branch
-ros_version=$(curl -s http://upgrade.mikrotik.com/routeros/NEWESTa7.stable | cut -d' ' -f1)
-
-echo ${ros_version}
-```
-
-3. Build the box
-```shell
-rm packer_cache -rf; packer build -var ros_ver=${ros_version} \
-  -var-file vagrant-plugins-routeros/vagrant_routeros_plugin_version.json \
-  -on-error=ask -force routeros.json
-```
-
-4. Go to https://www.vagrantup.com/ and manually publish `build/boxes/routeros.box`
 
 #### Windows
 ```batch
