@@ -57,11 +57,13 @@ References:
 
 ## Usage
 ```shell
-vagrant init cheretbe/routeros
+vagrant init cheretbe/routeros7-long-term
+# or
+vagrant init cheretbe/routeros7
 # or
 vagrant init cheretbe/routeros-long-term
 # or
-vagrant init cheretbe/routeros7
+vagrant init cheretbe/routeros
 
 vagrant up
 ```
