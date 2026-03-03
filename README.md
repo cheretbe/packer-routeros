@@ -11,10 +11,10 @@
 * https://www.virtualbox.org/
 
 #### Box URLs
-* Version 6 Long-term branch: https://app.vagrantup.com/cheretbe/boxes/routeros-long-term
-* Version 6 Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros
 * Version 7 Long-term branch: https://app.vagrantup.com/cheretbe/boxes/routeros7-long-term
 * Version 7 Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros7
+* Version 6 Long-term branch: https://app.vagrantup.com/cheretbe/boxes/routeros-long-term
+* Version 6 Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros
 
 #### Licensing
 :warning::warning: RouterOS needs a valid licence to function. Without a license it will run in 24-hour
