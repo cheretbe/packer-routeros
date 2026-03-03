@@ -36,6 +36,15 @@ def main(args):
             "published_version": None,
             "needs_update": False,
         },
+        {
+            "name": "routeros7-long-term",
+            "version_file": "NEWESTa7.long-term",
+            "version": None,
+            "normalized_version": None,
+            "published_version_full": None,
+            "published_version": None,
+            "needs_update": False,
+        },
     ]
 
     up_to_date = True

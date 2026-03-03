@@ -1,6 +1,8 @@
+[![](https://badgen.net/https/cheretbe.npkn.net/vagrant-ros-version/routeros7-long-term)](https://app.vagrantup.com/cheretbe/boxes/routeros7-long-term)
+[![](https://badgen.net/https/cheretbe.npkn.net/vagrant-ros-version/routeros7)](https://app.vagrantup.com/cheretbe/boxes/routeros7)
 [![](https://badgen.net/https/cheretbe.npkn.net/vagrant-ros-version/routeros-long-term)](https://app.vagrantup.com/cheretbe/boxes/routeros-long-term)
 [![](https://badgen.net/https/cheretbe.npkn.net/vagrant-ros-version/routeros)](https://app.vagrantup.com/cheretbe/boxes/routeros)
-[![](https://badgen.net/https/cheretbe.npkn.net/vagrant-ros-version/routeros7)](https://app.vagrantup.com/cheretbe/boxes/routeros7)
+
 
 # Mikrotik RouterOS boxes for Vagrant
 * https://mikrotik.com
@@ -11,6 +13,7 @@
 #### Box URLs
 * Version 6 Long-term branch: https://app.vagrantup.com/cheretbe/boxes/routeros-long-term
 * Version 6 Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros
+* Version 7 Long-term branch: https://app.vagrantup.com/cheretbe/boxes/routeros7-long-term
 * Version 7 Stable branch: https://app.vagrantup.com/cheretbe/boxes/routeros7
 
 #### Licensing
@@ -168,7 +171,7 @@ use [tools/box_publish.py](./tools/box_publish.py)
 script
 ```shell
 # Interactive mode (will ask for box file and HCP credentials)
-./tools/box_publish.py --dry-run
+./tools/box_publish.py --hcp-creds-prompt --dry-run
 ```
 
 #### Windows
@@ -184,9 +187,10 @@ vagrant box add -f mt-test ./build/boxes/routeros.box
 
 ```ruby
 Vagrant.configure("2") do |config|
-  config.vm.box = "cheretbe/routeros7"
-  # config.vm.box = "cheretbe/routeros"
+  config.vm.box = "cheretbe/routeros7-long-term"
+  # config.vm.box = "cheretbe/routeros7"
   # config.vm.box = "cheretbe/routeros-long-term"
+  # config.vm.box = "cheretbe/routeros"
   # config.vm.box = "mt-test"
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--groups", "/__vagrant"]

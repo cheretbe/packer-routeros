@@ -9,7 +9,8 @@ vars:
       echo "{" \
         "\"routeros\": $(tools/normalize_ros_version.sh "${ROS_VERSION_6:-$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6 | cut -d' ' -f1)}")", \
         "\"routeros_long_term\": $(tools/normalize_ros_version.sh "${ROS_VERSION_6_LONG_TERM:-$(curl -s http://upgrade.mikrotik.com/routeros/LATEST.6fix | cut -d' ' -f1)}")", \
-        "\"routeros7\": $(tools/normalize_ros_version.sh "${ROS_VERSION_7:-$(curl -s http://upgrade.mikrotik.com/routeros/NEWESTa7.stable | cut -d' ' -f1)}")" \
+        "\"routeros7\": $(tools/normalize_ros_version.sh "${ROS_VERSION_7:-$(curl -s http://upgrade.mikrotik.com/routeros/NEWESTa7.stable | cut -d' ' -f1)}")", \
+        "\"routeros7_long_term\": $(tools/normalize_ros_version.sh "${ROS_VERSION_7_LONG_TERM:-$(curl -s http://upgrade.mikrotik.com/routeros/NEWESTa7.long-term | cut -d' ' -f1)}")" \
       "}"
   ROS_VERSIONS_JSON:
     ref: "fromJson .ROS_VERSIONS"
@@ -19,6 +20,8 @@ vars:
     ref: .ROS_VERSIONS_JSON.routeros_long_term
   ROS_VERSION_7:
     ref: .ROS_VERSIONS_JSON.routeros7
+  ROS_VERSION_7_LONG_TERM:
+    ref: .ROS_VERSIONS_JSON.routeros7_long_term
 tasks:
   default:
     desc: List available tasks
@@ -27,7 +30,8 @@ tasks:
       - echo "Examples:"
       - echo "  ROS_VERSION_6=6.49.10 task routeros"
       - echo "  ROS_VERSION_6_LONG_TERM=6.48.7 task routeros-long-term"
-      - echo "  ROS_VERSION_7=7.15.1 task routeros7"
+      - echo "  ROS_VERSION_7=7.21.3 task routeros7"
+      - echo "  ROS_VERSION_7_LONG_TERM=7.20.8 task routeros7-long-term"
     silent: true
 
   check-plugin-gem:
@@ -104,6 +108,17 @@ tasks:
           ROS_VERSION:
             ref: .ROS_VERSION_7
 
+  routeros7-long-term:
+    desc: Build RouterOS 7 long-term box
+    deps:
+      - check-plugin-gem
+    cmds:
+      - task: build-box
+        vars:
+          ROUTEROS_BRANCH: routeros7-long-term
+          ROS_VERSION:
+            ref: .ROS_VERSION_7_LONG_TERM
+
   ping-test:
     internal: true
     silent: true
@@ -127,25 +142,39 @@ tasks:
       - task: ping-test
         vars: {VM_NAME: host1, PING_TARGET: 192.168.199.12}
       - task: ping-test
+        vars: {VM_NAME: host1, PING_TARGET: 192.168.199.13}
+      - task: ping-test
         vars: {VM_NAME: host2, PING_TARGET: 192.168.199.10}
       - task: ping-test
         vars: {VM_NAME: host2, PING_TARGET: 192.168.199.12}
       - task: ping-test
+        vars: {VM_NAME: host2, PING_TARGET: 192.168.199.13}
+      - task: ping-test
         vars: {VM_NAME: host3, PING_TARGET: 192.168.199.10}
       - task: ping-test
         vars: {VM_NAME: host3, PING_TARGET: 192.168.199.11}
+      - task: ping-test
+        vars: {VM_NAME: host3, PING_TARGET: 192.168.199.13}
+      - task: ping-test
+        vars: {VM_NAME: host4, PING_TARGET: 192.168.199.10}
+      - task: ping-test
+        vars: {VM_NAME: host4, PING_TARGET: 192.168.199.11}
+      - task: ping-test
+        vars: {VM_NAME: host4, PING_TARGET: 192.168.199.12}
       - vagrant destroy -f
 
   test:
-    desc: Register temporary vagrant boxes and run some tests on them
+    desc: Register temporary vagrant boxes and run some basic tests on them
     cmds:
       - vagrant box add --force packer_test_routeros build/boxes/routeros_{{.ROS_VERSION_6.normalized}}.box
       - vagrant box add --force packer_test_routeros-long-term build/boxes/routeros-long-term_{{.ROS_VERSION_6_LONG_TERM.normalized}}.box
       - vagrant box add --force packer_test_routeros7 build/boxes/routeros7_{{.ROS_VERSION_7.normalized}}.box
+      - vagrant box add --force packer_test_routeros7-long-term build/boxes/routeros7-long-term_{{.ROS_VERSION_7_LONG_TERM.normalized}}.box
       - task: run-vagrant-test
       - vagrant box remove -f packer_test_routeros
       - vagrant box remove -f packer_test_routeros-long-term
       - vagrant box remove -f packer_test_routeros7
+      - vagrant box remove -f packer_test_routeros7-long-term
 
   cleanup:
     desc: Clean up build artifacts and temporary files
@@ -162,4 +191,5 @@ tasks:
       - task: routeros
       - task: routeros-long-term
       - task: routeros7
+      - task: routeros7-long-term
       - task: test
